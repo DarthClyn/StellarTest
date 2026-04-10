@@ -1,113 +1,72 @@
-// backend/server.js
 const express = require('express');
 const cors = require('cors');
-const bodyParser = require('body-parser');
-const { paymentMiddlewareFromConfig } = require('@x402/express');
-const { HTTPFacilitatorClient } = require('@x402/core/server');
-const { ExactStellarScheme } = require('@x402/stellar/exact/server');
+const multer = require('multer');
+const { execSync } = require('child_process');
 
 const app = express();
-const PORT = 3001;
-
+const upload = multer({ dest: 'uploads/' });
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json());
 
-// In-memory state
-const tasks = [];
-const logs = [];
+// --- CONFIG ---
+const CONTRACT_ID = "CBXDD2KRKCPNU5PVWADDTFGFLSAUCA73CFOMGYNCBSNDMO4DZWMOXMS5";
 
-// Utility: Add log and keep max 100
-function addLog(msg) {
-  logs.push(`[${new Date().toLocaleTimeString()}] ${msg}`);
-  if (logs.length > 100) logs.shift();
-}
+// Memory Store
+let tasks = {}; 
 
-// API: Get all tasks
-app.get('/api/tasks', (req, res) => {
-  res.json(tasks);
+// --- ROUTES ---
+
+// 1. Get Open Tasks (For Claude)
+app.get('/api/tasks/open', (req, res) => {
+    const openTasks = Object.values(tasks).filter(t => t.status === 'OPEN');
+    res.setHeader('Content-Type', 'application/json');
+    res.json(openTasks);
 });
 
-// API: Get all logs
-app.get('/api/logs', (req, res) => {
-  res.json(logs);
+// 2. Create Task (For VS Code)
+app.post('/api/tasks/create', (req, res) => {
+    const { taskId, title, reward } = req.body;
+    tasks[taskId] = { 
+        taskId, title, reward, 
+        status: 'OPEN', 
+        applications: [], 
+        assignedHunter: null,
+        filePath: null 
+    };
+    console.log(`[Hub] 🆕 Task Created: ${taskId}`);
+    res.json({ success: true });
 });
 
-// Agent B: Quote endpoint
-app.post('/api/agent-b/quote', (req, res) => {
-  const task = req.body;
-  if (!task || !task.category) {
-    addLog('Agent B received invalid task for quote.');
-    return res.status(400).json({ error: 'Invalid task' });
-  }
-  if (task.category === 'image generation') {
-    addLog('Agent B reviewed task. Category matches. Quoted: 0.2 USDC.');
-    return res.json({ accepted: true, quote: 0.2, currency: 'USDC' });
-  } else {
-    addLog('Agent B reviewed task. Category not supported. Rejected.');
-    return res.json({ accepted: false, reason: 'Category not supported' });
-  }
-});
-
-// Real x402 middleware configuration
-const x402Middleware = paymentMiddlewareFromConfig(
-  {
-    "POST /api/agent-b/execute": { 
-      accepts: { 
-        scheme: "exact", 
-        price: "0.20", // 0.20 USDC
-        network: "stellar:testnet", 
-        payTo: "GBWZGSPD2LTKJFCO3NY6KNZKH7LGZXJYEZQ3UITZWKSYBTCE7UWNO4OM" // Your Real Public Key
-      } 
-    },
-  },
-  new HTTPFacilitatorClient({ url: "https://www.x402.org/facilitator" }),
-  [{ network: "stellar:testnet", server: new ExactStellarScheme() }]
-);
-// Agent B: Execute endpoint (protected by x402)
-app.post('/api/agent-b/execute', x402Middleware, (req, res) => {
-  let realTxHash = "Hash not found by server";
-
-  // Method 1: Check the specific x402Payment object injected by the SDK
-  const paymentDetails = req.x402Payment || req.paymentContext || {};
-  if (paymentDetails.transactionHash || paymentDetails.txHash) {
-    realTxHash = paymentDetails.transactionHash || paymentDetails.txHash;
-  }
-
-  // Method 2: Check the Response headers (The middleware often attaches it here!)
-  if (realTxHash === "Hash not found by server") {
-    const responseHeader = res.getHeader('payment-response') || res.getHeader('x-payment-response');
-    if (responseHeader) {
-      try {
-        // The facilitator receipt is base64 encoded in the header
-        const decodedReceipt = JSON.parse(Buffer.from(responseHeader, 'base64').toString());
-        realTxHash = decodedReceipt.receipt?.transactionHash || decodedReceipt.transactionHash || decodedReceipt.id;
-      } catch (e) {
-        console.log("[Agent B] Found response header but couldn't decode.");
-      }
+// 3. Request Task (Hunter Application)
+app.post('/api/tasks/:taskId/request', (req, res) => {
+    const { taskId } = req.params;
+    const { hunterAddr } = req.body;
+    if (tasks[taskId]) {
+        tasks[taskId].status = 'REQUESTED';
+        tasks[taskId].applications.push(hunterAddr);
+        console.log(`[Notification] 🔔 Hunter ${hunterAddr} requested ${taskId}`);
+        res.json({ success: true });
+    } else {
+        res.status(404).json({ error: "Task not found" });
     }
-  }
-
-  addLog(`Payment of 0.2 USDC verified!`);
-  addLog(`Agent B executed task. Real Hash: ${realTxHash}`);
-  
-  res.json({
-    result: 'Task executed by Agent B',
-    txHash: realTxHash,
-  });
 });
 
-
-// API: Add new task (for Agent A)
-app.post('/api/tasks', (req, res) => {
-  const task = req.body;
-  if (!task || !task.id || !task.category) {
-    return res.status(400).json({ error: 'Invalid task' });
-  }
-  tasks.push(task);
-  addLog(`Agent A posted a new task: ${task.category}.`);
-  res.json({ success: true });
+// 4. Submit Work (Upload PDF)
+app.post('/api/tasks/:taskId/submit', upload.single('workFile'), (req, res) => {
+    const { taskId } = req.params;
+    if (tasks[taskId]) {
+        tasks[taskId].status = 'SUBMITTED';
+        tasks[taskId].filePath = req.file.path;
+        res.json({ success: true });
+    } else {
+        res.status(404).json({ error: "Task not found" });
+    }
 });
 
-app.listen(PORT, () => {
-  console.log(`Backend/Agent B listening on http://localhost:${PORT}`);
+// 5. Catch-All JSON Guard (Prevents HTML Error)
+app.use((req, res) => {
+    res.status(404).json({ error: "Route not found", path: req.path });
 });
+
+const PORT = 3001;
+app.listen(PORT, () => console.log(`🚀 Bazar Hub live at http://localhost:${PORT}`));
