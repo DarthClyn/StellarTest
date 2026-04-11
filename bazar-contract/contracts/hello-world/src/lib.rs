@@ -64,7 +64,7 @@ impl AgentRegistry {
 
     // --- TASK LIFECYCLE ---
 
-    pub fn create_task(env: Env, task_id: Symbol, contractor: Address, reward: i128) {
+pub fn create_task(env: Env, task_id: Symbol, contractor: Address, reward: i128) {
         contractor.require_auth();
         let task = Task { contractor: contractor.clone(), reward_usdc: reward, bounty_hunter: None, status: Symbol::new(&env, "open") };
         env.storage().persistent().set(&task_id, &task);

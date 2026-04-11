@@ -107,8 +107,17 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     // ⚠️ Note: request_task does NOT exist in contract — Hub-only until redeployed
     if (name === "apply_for_task") {
       const taskId = toSymbol(args.taskId);  // ✅ sanitize
+      // Call the on-chain request_task method
+      spawnSync("stellar", [
+        "contract", "invoke",
+        "--id", CONTRACT_ID,
+        ...auth,
+        "--", "request_task",
+        "--task_id", taskId,
+        "--hunter", myAddr
+      ], { encoding: "utf-8" });
       await syncHub('task_apply', { taskId, hunter: myAddr });
-      return { content: [{ type: "text", text: `Applied for ${taskId}. Awaiting Contractor allotment.` }] };
+      return { content: [{ type: "text", text: `Applied for ${taskId} on-chain. Awaiting Contractor allotment.` }] };
     }
 
     // 4. CONTRACTOR: ALLOTMENT
