@@ -123,7 +123,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     // 4. CONTRACTOR: ALLOTMENT
     if (name === "assign_worker") {
       const taskId = toSymbol(args.taskId);  // ✅ sanitize
-      spawnSync("stellar", ["contract", "invoke", "--id", CONTRACT_ID, ...auth, "--", "allot_task", "--task_id", taskId, "--contractor", myAddr, "--hunter", args.hunterAddr], { encoding: "utf-8" });
+      spawnSync("stellar", ["contract", "invoke", "--id", CONTRACT_ID, ...auth, "--", "allot_task", "--task_id", taskId, "--contractor", myAddr, "--bounty_hunter", args.hunterAddr], { encoding: "utf-8" });
       await syncHub('task_allot', { taskId, hunter: args.hunterAddr });
       return { content: [{ type: "text", text: `Task ${taskId} officially allotted to ${args.hunterAddr}.` }] };
     }
@@ -131,7 +131,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     // 5. HUNTER: DELIVERY
     if (name === "deliver_work") {
       const taskId = toSymbol(args.taskId);  // ✅ sanitize
-      spawnSync("stellar", ["contract", "invoke", "--id", CONTRACT_ID, ...auth, "--", "submit_task", "--task_id", taskId, "--hunter", myAddr], { encoding: "utf-8" });
+      spawnSync("stellar", ["contract", "invoke", "--id", CONTRACT_ID, ...auth, "--", "submit_task", "--task_id", taskId, "--bounty_hunter", myAddr], { encoding: "utf-8" });
       await syncHub('task_sub', { taskId, workNote: args.workNote });
       return { content: [{ type: "text", text: "Work submitted. Payment challenge ready for Contractor." }] };
     }
@@ -145,28 +145,57 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
     // 6. ✅ FIX: X402 — invoice.destination → invoice.recipient
     if (name === "pay_and_unlock") {
-      const taskId = toSymbol(args.taskId);  // ✅ sanitize
-      const res = await fetch(`${HUB}/api/tasks/${taskId}/download?addr=${myAddr}`);
-      if (res.status !== 402) return { content: [{ type: "text", text: "Task not in payment-ready state." }] };
+  const taskId = toSymbol(args.taskId);
+  const res = await fetch(`${HUB}/api/tasks/${taskId}/download?addr=${myAddr}`);
+  if (res.status !== 402) return { content: [{ type: "text", text: "Task not in payment-ready state." }] };
 
-      const invoice = await res.json();
-      const stroops = (invoice.invoice.amount * 10000000).toString();
-      const recipient = invoice.invoice.recipient;
+  const invoice = await res.json();
+  const stroops = (invoice.invoice.amount * 10000000).toString();
+  const recipient = invoice.invoice.recipient;
 
-      console.error(`[X402]: Paying ${invoice.invoice.amount} USDC to Hunter ${recipient}...`);
-      const payRes = spawnSync("stellar", ["contract", "invoke", "--id", USDC_SAC, ...auth, "--", "transfer", "--from", myAddr, "--to", recipient, "--amount", stroops], { encoding: "utf-8" });
-      const txHash = payRes.stdout.match(/["']([a-f0-9]{64})["']/i)?.[1];
-      if (!txHash) throw new Error("USDC Transfer failed — no tx hash found.");
+  console.error(`[X402]: Paying ${invoice.invoice.amount} USDC to Hunter ${recipient}...`);
 
-      console.error(`[SETTLE]: Consuming hash ${txHash} on-chain...`);
-      spawnSync("stellar", ["contract", "invoke", "--id", CONTRACT_ID, ...auth, "--", "settle_task", "--task_id", taskId, "--contractor", myAddr, "--tx_hash", txHash], { encoding: "utf-8" });
+  // ✅ FIX 1: capture stderr too — tx hash is in stderr not stdout
+  const payRes = spawnSync("stellar", [
+    "contract", "invoke",
+    "--id", USDC_SAC,
+    ...auth,
+    "--", "transfer",
+    "--from", myAddr,
+    "--to", recipient,
+    "--amount", stroops
+  ], { encoding: "utf-8" });
 
-      await syncHub('task_paid', { taskId, txHash });
-      const finalRes = await fetch(`${HUB}/api/tasks/${taskId}/download?addr=${myAddr}`, { headers: { 'x-stellar-tx': txHash } });
-      const data = await finalRes.json();
+  // ✅ FIX 2: search BOTH stdout and stderr, no quotes required
+  const combined = (payRes.stdout || "") + (payRes.stderr || "");
+  const txHash = combined.match(/([a-f0-9]{64})/i)?.[1];
 
-      return { content: [{ type: "text", text: `SUCCESS! Reward Paid. Unlocked Work: ${data.payload}` }] };
-    }
+  if (!txHash) {
+    console.error("[X402 DEBUG] stdout:", payRes.stdout);
+    console.error("[X402 DEBUG] stderr:", payRes.stderr);
+    throw new Error(`USDC Transfer failed — no tx hash found. stderr: ${payRes.stderr}`);
+  }
+
+  console.error(`[SETTLE]: Consuming hash ${txHash} on-chain...`);
+  spawnSync("stellar", [
+    "contract", "invoke",
+    "--id", CONTRACT_ID,
+    ...auth,
+    "--", "settle_task",
+    "--task_id", taskId,
+    "--contractor", myAddr,
+    "--tx_hash", txHash
+  ], { encoding: "utf-8" });
+
+  await syncHub('task_paid', { taskId, txHash });
+
+  const finalRes = await fetch(`${HUB}/api/tasks/${taskId}/download?addr=${myAddr}`, {
+    headers: { 'x-stellar-tx': txHash }
+  });
+  const data = await finalRes.json();
+
+  return { content: [{ type: "text", text: `SUCCESS! Reward Paid. Unlocked Work: ${data.payload}` }] };
+}
 
   } catch (e) {
     console.error(e);
