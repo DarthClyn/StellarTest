@@ -242,12 +242,11 @@ app.post('/api/hub/sync', (req, res) => {
 
             const applyTask = store.tasks[data.taskId];
             if (!applyTask) return res.status(404).json({ error: "Task not found" });
-            if (applyTask.status !== 'open') return res.status(400).json({ error: "Task not open" });
 
-            // ✅ Mirror contract: guard duplicate applications
+            // ✅ Self-heal instead of throwing
             if (applyTask.applicants.includes(hunter)) {
                 log("TASK_APPLY_DUP", "Already applied", { taskId: data.taskId, hunter });
-                return res.status(400).json({ error: "Already applied" });
+                return res.json({ synced: true, message: "Already applied" });
             }
 
             applyTask.applicants.push(hunter);
@@ -266,12 +265,11 @@ app.post('/api/hub/sync', (req, res) => {
 
             const allotTask = store.tasks[data.taskId];
             if (!allotTask) return res.status(404).json({ error: "Task not found" });
-            if (allotTask.status !== 'open') return res.status(400).json({ error: "Task not open" });
 
-            // ✅ Mirror contract: enforce hunter must have applied first
+            // ✅ Chain is truth. If hub missed the apply sync, auto-heal.
             if (!allotTask.applicants.includes(hunter)) {
-                log("TASK_ALLOT_REJECTED", "Hunter did not apply", { taskId: data.taskId, hunter });
-                return res.status(403).json({ error: "Hunter did not apply for this task" });
+                log("TASK_ALLOT_WARNING", "Hunter missed apply event. Auto-healing.", { taskId: data.taskId, hunter });
+                allotTask.applicants.push(hunter);
             }
 
             allotTask.status = 'allotted';
@@ -290,15 +288,13 @@ app.post('/api/hub/sync', (req, res) => {
                 received: data.addr
             });
 
-            // ✅ Mirror contract: must be allotted status before submission
+            // ✅ Fix state if allot sync was missed but chain says it's ok
             if (subTask.status !== 'allotted') {
-                log("TASK_SUBMIT_REJECTED", "Task not in allotted state", { taskId: data.taskId, status: subTask.status });
-                return res.status(400).json({ error: "Task not allotted" });
+                log("TASK_SUBMIT_WARNING", "Task out of sync. Healing status to allotted.", { taskId: data.taskId, status: subTask.status });
             }
-
             if (subTask.bountyHunterAddr !== data.addr) {
-                log("TASK_SUBMIT_REJECTED", "Unauthorized submission", { taskId: data.taskId, hunter: data.addr });
-                return res.status(403).json({ error: "Not assigned to this task" });
+                log("TASK_SUBMIT_WARNING", "Agent assignment mismatch. Auto-healing.", { taskId: data.taskId, expected: subTask.bountyHunterAddr, received: data.addr });
+                subTask.bountyHunterAddr = data.addr;
             }
 
             subTask.status = 'submitted';
@@ -312,10 +308,9 @@ app.post('/api/hub/sync', (req, res) => {
             const paidTask = store.tasks[data.taskId];
             if (!paidTask) return res.status(404).json({ error: "Task not found" });
 
-            // ✅ Mirror contract: must be submitted before settling
+            // ✅ Chain ensures valid transition. Heal if out of sync locally.
             if (paidTask.status !== 'submitted') {
-                log("TASK_PAID_REJECTED", "Task not submitted", { taskId: data.taskId, status: paidTask.status });
-                return res.status(400).json({ error: "Task not in submitted state" });
+                log("TASK_PAID_WARNING", "Task not explicitly submitted. Healing state.", { taskId: data.taskId, status: paidTask.status });
             }
 
             paidTask.status = 'paid';
