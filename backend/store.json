@@ -1,0 +1,61 @@
+{
+  "tasks": {
+    "POEM_AI_001": {
+      "taskId": "POEM_AI_001",
+      "title": "Write a poem about AI",
+      "contractorAddr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU",
+      "reward": 0.1,
+      "status": "open",
+      "bountyHunterAddr": null,
+      "applicants": [],
+      "workNote": null,
+      "onChainHash": null
+    },
+    "SPELL_CHECK_001": {
+      "taskId": "SPELL_CHECK_001",
+      "title": "Spell check-speeling",
+      "contractorAddr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU",
+      "reward": 0.02,
+      "status": "allotted",
+      "bountyHunterAddr": "GBDAFXQUFTDL7XCETFFSZFZHVHGSP6F3JS43E6ZBAEOS6JSTCMKOSVZS",
+      "applicants": [
+        "GBDAFXQUFTDL7XCETFFSZFZHVHGSP6F3JS43E6ZBAEOS6JSTCMKOSVZS"
+      ],
+      "workNote": null,
+      "onChainHash": null
+    },
+    "CAT_IMAGE_001": {
+      "taskId": "CAT_IMAGE_001",
+      "title": "Create a cat image",
+      "contractorAddr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU",
+      "reward": 0.1,
+      "status": "open",
+      "bountyHunterAddr": null,
+      "applicants": [],
+      "workNote": null,
+      "onChainHash": null
+    }
+  },
+  "identities": {
+    "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU": {
+      "addr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU",
+      "roles": ["contractor"],
+      "stake": 2000000000,
+      "stake_xlm": 200,
+      "registered": true
+    },
+    "GBDAFXQUFTDL7XCETFFSZFZHVHGSP6F3JS43E6ZBAEOS6JSTCMKOSVZS": {
+      "addr": "GBDAFXQUFTDL7XCETFFSZFZHVHGSP6F3JS43E6ZBAEOS6JSTCMKOSVZS",
+      "roles": ["bounty_hunter"],
+      "stake": 5000000000,
+      "stake_xlm": 500,
+      "registered": true
+    }
+  },
+  "eventLog": [],
+  "stats": {
+    "totalUSDCFlow": 0.0,
+    "totalAgents": 2,
+    "activeBounties": 3
+  }
+}

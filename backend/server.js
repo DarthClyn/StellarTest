@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
 const app = express();
 
 app.use(cors());
@@ -24,6 +26,7 @@ const log = (type, msg, meta = {}) => {
 /**
  * --- STATE ENGINE ---
  */
+const STORE_FILE = path.join(__dirname, 'store.json');
 let store = {
     tasks:      {},
     identities: {},
@@ -32,6 +35,24 @@ let store = {
         totalUSDCFlow:  0,
         totalAgents:    0,
         activeBounties: 0
+    }
+};
+
+if (fs.existsSync(STORE_FILE)) {
+    try {
+        const raw = fs.readFileSync(STORE_FILE, 'utf8');
+        store = JSON.parse(raw);
+        log("BOOT", "Loaded persistent store from store.json");
+    } catch (e) {
+        log("BOOT_ERROR", "Failed to parse store.json. Starting fresh.");
+    }
+}
+
+const saveStore = () => {
+    try {
+        fs.writeFileSync(STORE_FILE, JSON.stringify(store, null, 2), 'utf8');
+    } catch (e) {
+        log("SAVE_ERROR", "Could not persist store to disk");
     }
 };
 
@@ -331,6 +352,7 @@ app.post('/api/hub/sync', (req, res) => {
             log("UNKNOWN_EVENT", "Unhandled event", { event });
     }
 
+    saveStore(); // Persist the updated state automatically
     res.json({ synced: true, hubTime: now });
 });
 
@@ -347,6 +369,10 @@ app.get('/api/dashboard/activity', (req, res) => {
 
 app.get('/api/dashboard/stats', (req, res) => {
     res.json(store.stats);
+});
+
+app.get('/api/dashboard/agents', (req, res) => {
+    res.json(Object.values(store.identities));
 });
 
 // ---------------------------------------------------------------------------
