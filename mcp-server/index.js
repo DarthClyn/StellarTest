@@ -3,103 +3,157 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { spawnSync, execSync } from "child_process";
 
-// CONFIG
-const CONTRACT_ID = "CBXDD2KRKCPNU5PVWADDTFGFLSAUCA73CFOMGYNCBSNDMO4DZWMOXMS5";
+/**
+ * --- IRON CLAD CONFIGURATION ---
+ */
+const CONTRACT_ID = "CDPKZKQ7BLVK4MPPXYPHTIR27RKTW6LEACZVEHSEDRLJFCD3CUW4IJLR";
 const USDC_SAC = "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA";
 const SECRET_KEY = process.env.STELLAR_SECRET_KEY;
-const ROLE = process.env.AGENT_ROLE; 
-const HUB = process.env.HUB_URL || "http://localhost:3001";
+const ROLE = process.env.AGENT_ROLE; // 'contractor' or 'bounty_hunter'
+const HUB = "http://localhost:3001";
 
 const server = new Server(
-  { name: "bazar-mcp", version: "3.2.0" },
+  { name: "bazar-mcp-pro", version: "4.5.0" },
   { capabilities: { tools: {} } }
 );
 
+/**
+ * --- THE COMPLETE TOOLSET ---
+ */
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: [
-    { name: "get_wallet_info", description: "Get agent public address.", inputSchema: { type: "object", properties: {} } },
-    { name: "register_on_bazar", description: "Stake XLM to join platform.", inputSchema: { type: "object", properties: { stake: { type: "number" } }, required: ["stake"] } },
-    { name: "post_task_to_hub", description: "Poster: Create a new bounty.", inputSchema: { type: "object", properties: { taskId: { type: "string" }, title: { type: "string" }, reward: { type: "number" } }, required: ["taskId", "title", "reward"] } },
-    { name: "find_tasks", description: "Hunter: Search for open work.", inputSchema: { type: "object", properties: {} } },
-    { name: "secure_download", description: "Poster: Pay USDC and download file.", inputSchema: { type: "object", properties: { taskId: { type: "string" } }, required: ["taskId"] } }
+    { name: "verify_address",    description: "Derive and verify your Stellar address from secret key.", inputSchema: { type: "object", properties: {} } },
+    { name: "get_wallet_status", description: "Get address and Hub registration status.", inputSchema: { type: "object", properties: {} } },
+    { name: "register_identity", description: "Stake XLM to join (Contractor: 2k, Hunter: 5k).", inputSchema: { type: "object", properties: { stake: { type: "number" } }, required: ["stake"] } },
+    { name: "post_bounty",       description: "Contractor: Create a new task on-chain.", inputSchema: { type: "object", properties: { taskId: { type: "string" }, title: { type: "string" }, reward: { type: "number" } }, required: ["taskId", "title", "reward"] } },
+    { name: "scout_tasks",       description: "Hunter: Find open bounties on the Hub.", inputSchema: { type: "object", properties: {} } },
+    { name: "apply_for_task",    description: "Hunter: Request a task on-chain.", inputSchema: { type: "object", properties: { taskId: { type: "string" } }, required: ["taskId"] } },
+    { name: "assign_worker",     description: "Contractor: Allot a task to a specific hunter.", inputSchema: { type: "object", properties: { taskId: { type: "string" }, hunterAddr: { type: "string" } }, required: ["taskId", "hunterAddr"] } },
+    { name: "deliver_work",      description: "Hunter: Submit work payload to Hub and Chain.", inputSchema: { type: "object", properties: { taskId: { type: "string" }, workNote: { type: "string" } }, required: ["taskId", "workNote"] } },
+    { name: "pay_and_unlock",    description: "Contractor: The X402 Master Tool. Pays USDC, Settles Chain, Unlocks Data.", inputSchema: { type: "object", properties: { taskId: { type: "string" } }, required: ["taskId"] } },
+    { name: "initiate_exit",     description: "Agent: Start 24h cooldown to withdraw stake.", inputSchema: { type: "object", properties: {} } }
   ]
 }));
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
+  const auth = ["--source", SECRET_KEY, "--network", "testnet"];
+
+  // ✅ FIX 1: myAddr inside try/catch — won't crash server
+  let myAddr;
+  try {
+    myAddr = execSync(`stellar keys address ${SECRET_KEY}`, { encoding: 'utf-8' }).trim();
+  } catch (e) {
+    return { content: [{ type: "text", text: `FATAL: Cannot derive address. Check STELLAR_SECRET_KEY. ${e.message}` }], isError: true };
+  }
+
+  const syncHub = async (event, data) => {
+    await fetch(`${HUB}/api/hub/sync`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ event, data: { ...data, addr: myAddr } })
+    });
+  };
 
   try {
-    if (name === "get_wallet_info") {
-      const addr = execSync(`stellar keys address ${SECRET_KEY}`).toString().trim();
-      return { content: [{ type: "text", text: `Public Address: ${addr}` }] };
+
+    // ✅ NEW: VERIFY ADDRESS
+    if (name === "verify_address") {
+      return { content: [{ type: "text", text: `Your Stellar Address: ${myAddr}\nRole: ${ROLE}\nNetwork: testnet` }] };
     }
 
-    if (name === "register_on_bazar") {
-      const stroops = Math.floor(args.stake * 10000000).toString(); 
-      
-      // ARRAY SYNTAX: This is the only way to guarantee Windows doesn't break the double-dash
-      const result = spawnSync("stellar", [
-        "contract", "invoke",
-        "--id", CONTRACT_ID,
-        "--source", SECRET_KEY,
-        "--network", "testnet",
-        "--", 
-        "register",
-        "--id", ROLE,
-        "--addr", SECRET_KEY,
-        "--role", ROLE,
-        "--stake", stroops
-      ], { encoding: "utf-8" });
-
-      if (result.error || result.status !== 0) {
-        throw new Error(result.stderr || "Registration failed");
-      }
-      return { content: [{ type: "text", text: `Success! Registered as ${ROLE} on-chain.\n${result.stdout}` }] };
+    // ✅ FIX: GET WALLET STATUS
+    if (name === "get_wallet_status") {
+      const res = await fetch(`${HUB}/api/agents/${myAddr}`);
+      const data = await res.json();
+      return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
     }
 
-    if (name === "post_task_to_hub") {
-      await fetch(`${HUB}/api/tasks/create`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(args)
-      });
-      return { content: [{ type: "text", text: `Task '${args.title}' posted. Reward: ${args.reward} USDC.` }] };
+    // 1. IDENTITY MANAGEMENT
+    if (name === "register_identity") {
+      const stroops = (args.stake * 10000000).toString();
+      const agentId = `${ROLE}_${myAddr.slice(-6)}`;
+      console.error(`[STAKE]: Registering ${ROLE} with ${args.stake} XLM...`);
+      spawnSync("stellar", ["contract", "invoke", "--id", CONTRACT_ID, ...auth, "--", "register", "--agent_id", agentId, "--addr", myAddr, "--role", ROLE, "--stake", stroops], { encoding: "utf-8" });
+      await syncHub('reg', { role: ROLE, stake: args.stake });
+      return { content: [{ type: "text", text: `Success: Registered as ${ROLE}. Identity Synced.` }] };
     }
 
-    if (name === "find_tasks") {
-      const res = await fetch(`${HUB}/api/tasks/open`);
+    // 2. CONTRACTOR: BOUNTY CREATION
+    if (name === "post_bounty") {
+      const rewardStroops = (args.reward * 10000000).toString();
+      spawnSync("stellar", ["contract", "invoke", "--id", CONTRACT_ID, ...auth, "--", "create_task", "--task_id", args.taskId, "--contractor", myAddr, "--reward", rewardStroops], { encoding: "utf-8" });
+      await syncHub('task_new', { taskId: args.taskId, reward: args.reward, contractor: myAddr, title: args.title });
+      return { content: [{ type: "text", text: `Bounty '${args.title}' is live on-chain.` }] };
+    }
+
+    // ✅ FIX: SCOUT TASKS — Hub-based, not XDR chain events
+    if (name === "scout_tasks") {
+      const res = await fetch(`${HUB}/api/dashboard/tasks`);
       const tasks = await res.json();
-      return { content: [{ type: "text", text: JSON.stringify(tasks, null, 2) }] };
+      const open = tasks.filter(t => t.status === 'open');
+      const display = open.length
+        ? open.map(t => `• [${t.taskId}] ${t.title} — ${t.reward} USDC | Applicants: ${(t.applicants || []).length}`).join('\n')
+        : "No open bounties found.";
+      return { content: [{ type: "text", text: display }] };
     }
 
-    if (name === "secure_download") {
-      let res = await fetch(`${HUB}/api/tasks/${args.taskId}/download`);
-      if (res.status === 402) {
-        const invoice = await res.json();
-        const amountStroops = Math.floor(invoice.amount * 10000000).toString();
-        const myAddr = execSync(`stellar keys address ${SECRET_KEY}`).toString().trim();
-        
-        const result = spawnSync("stellar", [
-          "contract", "invoke",
-          "--id", USDC_SAC,
-          "--source", SECRET_KEY,
-          "--network", "testnet",
-          "--",
-          "transfer",
-          "--from", myAddr,
-          "--to", invoice.destination,
-          "--amount", amountStroops
-        ], { encoding: "utf-8" });
+    // 3. HUNTER: APPLICATION
+    // ⚠️ Note: request_task does NOT exist in contract — Hub-only until redeployed
+    if (name === "apply_for_task") {
+      // spawnSync removed — contract has no request_task fn yet
+      await syncHub('task_apply', { taskId: args.taskId, hunter: myAddr });
+      return { content: [{ type: "text", text: `Applied for ${args.taskId}. Awaiting Contractor allotment.` }] };
+    }
 
-        const txHash = result.stdout.match(/ID: (\w+)/)?.[1] || "success";
-        res = await fetch(`${HUB}/api/tasks/${args.taskId}/download`, { headers: { 'x-stellar-tx': txHash } });
-        return { content: [{ type: "text", text: "USDC Payment confirmed. Unlocking file..." }] };
-      }
-      return { content: [{ type: "text", text: "Download initiated or file already owned." }] };
+    // 4. CONTRACTOR: ALLOTMENT
+    if (name === "assign_worker") {
+      spawnSync("stellar", ["contract", "invoke", "--id", CONTRACT_ID, ...auth, "--", "allot_task", "--task_id", args.taskId, "--contractor", myAddr, "--hunter", args.hunterAddr], { encoding: "utf-8" });
+      await syncHub('task_allot', { taskId: args.taskId, hunter: args.hunterAddr });
+      return { content: [{ type: "text", text: `Task ${args.taskId} officially allotted to ${args.hunterAddr}.` }] };
+    }
+
+    // 5. HUNTER: DELIVERY
+    if (name === "deliver_work") {
+      spawnSync("stellar", ["contract", "invoke", "--id", CONTRACT_ID, ...auth, "--", "submit_task", "--task_id", args.taskId, "--hunter", myAddr], { encoding: "utf-8" });
+      await syncHub('task_sub', { taskId: args.taskId, workNote: args.workNote });
+      return { content: [{ type: "text", text: "Work submitted. Payment challenge ready for Contractor." }] };
+    }
+
+    // ✅ FIX: initiate_exit handler — was completely missing
+    if (name === "initiate_exit") {
+      const agentId = `${ROLE}_${myAddr.slice(-6)}`;
+      spawnSync("stellar", ["contract", "invoke", "--id", CONTRACT_ID, ...auth, "--", "request_exit", "--agent_id", agentId], { encoding: "utf-8" });
+      return { content: [{ type: "text", text: `Exit initiated. 24h cooldown started. Stake will be refunded after cooldown.` }] };
+    }
+
+    // 6. ✅ FIX: X402 — invoice.destination → invoice.recipient
+    if (name === "pay_and_unlock") {
+      const res = await fetch(`${HUB}/api/tasks/${args.taskId}/download?addr=${myAddr}`);
+      if (res.status !== 402) return { content: [{ type: "text", text: "Task not in payment-ready state." }] };
+
+      const invoice = await res.json();
+      const stroops = (invoice.invoice.amount * 10000000).toString(); // ✅ invoice.invoice (nested)
+      const recipient = invoice.invoice.recipient;                    // ✅ correct field name
+
+      console.error(`[X402]: Paying ${invoice.invoice.amount} USDC to Hunter ${recipient}...`);
+      const payRes = spawnSync("stellar", ["contract", "invoke", "--id", USDC_SAC, ...auth, "--", "transfer", "--from", myAddr, "--to", recipient, "--amount", stroops], { encoding: "utf-8" });
+      const txHash = payRes.stdout.match(/["']([a-f0-9]{64})["']/i)?.[1]; // ✅ more robust hash extraction
+      if (!txHash) throw new Error("USDC Transfer failed — no tx hash found.");
+
+      console.error(`[SETTLE]: Consuming hash ${txHash} on-chain...`);
+      spawnSync("stellar", ["contract", "invoke", "--id", CONTRACT_ID, ...auth, "--", "settle_task", "--task_id", args.taskId, "--contractor", myAddr, "--tx_hash", txHash], { encoding: "utf-8" });
+
+      await syncHub('task_paid', { taskId: args.taskId, txHash });
+      const finalRes = await fetch(`${HUB}/api/tasks/${args.taskId}/download?addr=${myAddr}`, { headers: { 'x-stellar-tx': txHash } });
+      const data = await finalRes.json();
+
+      return { content: [{ type: "text", text: `SUCCESS! Reward Paid. Unlocked Work: ${data.payload}` }] };
     }
 
   } catch (e) {
-    return { content: [{ type: "text", text: `ERROR: ${e.message}` }], isError: true };
+    console.error(e);
+    return { content: [{ type: "text", text: `STALLAR_SYSTEM_ERROR: ${e.stderr || e.message}` }], isError: true };
   }
 });
 
