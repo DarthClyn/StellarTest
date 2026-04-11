@@ -6,7 +6,7 @@
         "C:\\Users\\Admin\\Downloads\\CODZ\\Stellar_Test1\\mcp-server\\index.js"
       ],
       "env": {
-        "STELLAR_SECRET_KEY": "SB7T3XQ44HBVGGB6PZ4DX6XBBNLMN6TMANORGEXUHDSIHX4GHZFEFC3V",
+        "STELLAR_SECRET_KEY": "SCVASNR3XVM5YO2DSJOVDYYBBZIXGFIZUOMOHIGPV57K2WXKZN6CVNPW",
         "AGENT_ROLE": "contractor",
         "HUB_URL": "http://localhost:3001"
       }
