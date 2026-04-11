@@ -8,7 +8,7 @@ app.use(express.json());
 /**
  * --- CONFIGURATION ---
  */
-const CONTRACT_ID = "CBCZOBH5X2H7MBMDSPJAPB2VR5KE566ZCGKKX37K44F4ED6TVIQHAPUW";
+const CONTRACT_ID = "CBIBCZNBDMHAITGJCTSUTDX4COEPDJA53WAWCOFEXTKBE7YWHNV7ZAUC";
 const USDC_SAC    = "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA";
 
 const ROLES  = { CONTRACTOR: 'contractor', HUNTER: 'bounty_hunter' };
@@ -64,6 +64,21 @@ app.get('/api/agents/:addr', (req, res) => {
         history: involvedTasks,
         canPost: identity.roles.includes(ROLES.CONTRACTOR),
         canWork: identity.roles.includes(ROLES.HUNTER)
+    });
+});
+
+app.get('/api/agents/:addr/stake', (req, res) => {
+    const addr = req.params.addr;
+    const identity = store.identities[addr];
+
+    if (!identity) {
+        return res.status(404).json({ error: "Agent not found" });
+    }
+
+    res.json({
+        addr: addr,
+        stake: identity.stake,
+        stake_xlm: identity.stake_xlm
     });
 });
 
@@ -154,15 +169,44 @@ app.post('/api/hub/sync', (req, res) => {
                 store.identities[data.addr] = {
                     addr: data.addr,
                     roles: [data.role],
-                    totalStake: data.stake,
+                    stake: data.stake,
+                    stake_xlm: data.stake / 10_000_000,
                     registered: true
                 };
                 store.stats.totalAgents++;
             } else if (!store.identities[data.addr].roles.includes(data.role)) {
                 store.identities[data.addr].roles.push(data.role);
-                store.identities[data.addr].totalStake += data.stake;
+                store.identities[data.addr].stake += data.stake;
+                store.identities[data.addr].stake_xlm += data.stake / 10_000_000;
             }
             break;
+
+        // ------------------ STAKE MANAGEMENT ------------------
+        case 'stake_slashed': {
+            const agent = store.identities[data.agentId];
+            if (agent) {
+                agent.stake -= data.amount;
+                agent.stake_xlm -= data.amount / 10_000_000;
+                log("STAKE_SLASHED", "Agent stake updated", { agentId: data.agentId, newStake: agent.stake, reason: data.reason });
+            }
+            break;
+        }
+
+        case 'stake_topped_up': {
+            const agent = store.identities[data.agentId];
+            if (agent) {
+                agent.stake += data.amount;
+                agent.stake_xlm += data.amount / 10_000_000;
+                log("STAKE_TOPUP", "Agent stake updated", { agentId: data.agentId, newStake: agent.stake });
+            }
+            break;
+        }
+
+        case 'admin_updated': {
+            log("ADMIN_UPDATE", "Admin address has been updated", { newAdmin: data.newAdmin });
+            break;
+        }
+
 
         // ------------------ CREATE TASK ------------------
         case 'task_new':
@@ -184,99 +228,109 @@ app.post('/api/hub/sync', (req, res) => {
             };
 
             store.stats.activeBounties++;
-
             log("TASK_NEW", "Created", store.tasks[data.taskId]);
             break;
 
         // ------------------ APPLY ------------------
-        case 'task_apply':
-            if (store.tasks[data.taskId]) {
-                const task = store.tasks[data.taskId];
+        case 'task_apply': {
+            const hunter = data.bounty_hunter;
 
-                if (!task.applicants.includes(data.hunter)) {
-                    task.applicants.push(data.hunter);
-                }
-
-                log("TASK_APPLY", "Hunter applied", {
-                    taskId: data.taskId,
-                    hunter: data.hunter
-                });
+            if (!hunter) {
+                log("TASK_APPLY_ERR", "Missing bounty_hunter field", data);
+                return res.status(400).json({ error: "Missing bounty_hunter field" });
             }
+
+            const applyTask = store.tasks[data.taskId];
+            if (!applyTask) return res.status(404).json({ error: "Task not found" });
+            if (applyTask.status !== 'open') return res.status(400).json({ error: "Task not open" });
+
+            // ✅ Mirror contract: guard duplicate applications
+            if (applyTask.applicants.includes(hunter)) {
+                log("TASK_APPLY_DUP", "Already applied", { taskId: data.taskId, hunter });
+                return res.status(400).json({ error: "Already applied" });
+            }
+
+            applyTask.applicants.push(hunter);
+            log("TASK_APPLY", "Hunter applied", { taskId: data.taskId, hunter });
             break;
+        }
 
         // ------------------ ALLOT ------------------
-        case 'task_allot':
-            if (store.tasks[data.taskId]) {
-                const task = store.tasks[data.taskId];
+        case 'task_allot': {
+            const hunter = data.bounty_hunter;
 
-                if (task.status !== 'open') return;
-
-                if (!task.applicants.includes(data.hunter)) {
-                    log("TASK_ALLOT_WARN", "Hunter not in applicants", {
-                        taskId: data.taskId,
-                        hunter: data.hunter
-                    });
-                }
-
-                task.status = 'allotted';
-                task.bountyHunterAddr = data.hunter;
-
-                log("TASK_ALLOT", "Assigned", {
-                    taskId: data.taskId,
-                    hunter: data.hunter
-                });
+            if (!hunter) {
+                log("TASK_ALLOT_ERR", "Missing bounty_hunter field", data);
+                return res.status(400).json({ error: "Missing bounty_hunter field" });
             }
+
+            const allotTask = store.tasks[data.taskId];
+            if (!allotTask) return res.status(404).json({ error: "Task not found" });
+            if (allotTask.status !== 'open') return res.status(400).json({ error: "Task not open" });
+
+            // ✅ Mirror contract: enforce hunter must have applied first
+            if (!allotTask.applicants.includes(hunter)) {
+                log("TASK_ALLOT_REJECTED", "Hunter did not apply", { taskId: data.taskId, hunter });
+                return res.status(403).json({ error: "Hunter did not apply for this task" });
+            }
+
+            allotTask.status = 'allotted';
+            allotTask.bountyHunterAddr = hunter;
+            log("TASK_ALLOT", "Assigned", { taskId: data.taskId, hunter });
             break;
+        }
 
         // ------------------ SUBMIT ------------------
-        case 'task_sub':
-            if (store.tasks[data.taskId]) {
-                const task = store.tasks[data.taskId];
+        case 'task_sub': {
+            const subTask = store.tasks[data.taskId];
+            if (!subTask) return res.status(404).json({ error: "Task not found" });
 
-                log("TASK_SUBMIT_CHECK", "Verifying assignment", {
-                    expected: task.bountyHunterAddr,
-                    received: data.addr
-                });
+            log("TASK_SUBMIT_CHECK", "Verifying assignment", {
+                expected: subTask.bountyHunterAddr,
+                received: data.addr
+            });
 
-                if (task.bountyHunterAddr !== data.addr) {
-                    log("TASK_SUBMIT_REJECTED", "Unauthorized submission", {
-                        taskId: data.taskId,
-                        hunter: data.addr
-                    });
-
-                    return res.status(403).json({
-                        error: "Not assigned to this task"
-                    });
-                }
-
-                task.status = 'submitted';
-                task.workNote = data.workNote;
-
-                log("TASK_SUBMIT", "Work submitted", {
-                    taskId: data.taskId,
-                    hunter: data.addr
-                });
+            // ✅ Mirror contract: must be allotted status before submission
+            if (subTask.status !== 'allotted') {
+                log("TASK_SUBMIT_REJECTED", "Task not in allotted state", { taskId: data.taskId, status: subTask.status });
+                return res.status(400).json({ error: "Task not allotted" });
             }
+
+            if (subTask.bountyHunterAddr !== data.addr) {
+                log("TASK_SUBMIT_REJECTED", "Unauthorized submission", { taskId: data.taskId, hunter: data.addr });
+                return res.status(403).json({ error: "Not assigned to this task" });
+            }
+
+            subTask.status = 'submitted';
+            subTask.workNote = data.workNote;
+            log("TASK_SUBMIT", "Work submitted", { taskId: data.taskId, hunter: data.addr });
             break;
+        }
 
         // ------------------ PAID ------------------
-        case 'task_paid':
-            if (store.tasks[data.taskId]) {
-                const task = store.tasks[data.taskId];
+        case 'task_paid': {
+            const paidTask = store.tasks[data.taskId];
+            if (!paidTask) return res.status(404).json({ error: "Task not found" });
 
-                task.status = 'paid';
-                task.onChainHash = data.txHash;
-
-                store.stats.totalUSDCFlow += task.reward;
-                store.stats.activeBounties--;
-
-                log("TASK_PAID", "Payment settled", {
-                    taskId: data.taskId,
-                    txHash: data.txHash,
-                    amount: task.reward
-                });
+            // ✅ Mirror contract: must be submitted before settling
+            if (paidTask.status !== 'submitted') {
+                log("TASK_PAID_REJECTED", "Task not submitted", { taskId: data.taskId, status: paidTask.status });
+                return res.status(400).json({ error: "Task not in submitted state" });
             }
+
+            paidTask.status = 'paid';
+            paidTask.onChainHash = data.tx_hash;
+
+            store.stats.totalUSDCFlow += paidTask.reward;
+            store.stats.activeBounties--;
+
+            log("TASK_PAID", "Payment settled", {
+                taskId: data.taskId,
+                txHash: data.tx_hash,
+                amount: paidTask.reward
+            });
             break;
+        }
 
         default:
             log("UNKNOWN_EVENT", "Unhandled event", { event });

@@ -140,6 +140,8 @@ get_wallet_status
 | deliver_work      | submit_task       | task_sub   | Hunter     | Requires assignment |
 | pay_and_unlock    | settle_task       | task_paid  | Contractor | X402                |
 | initiate_exit     | request_exit      | —          | Both       | 24h cooldown        |
+| top_up_stake      | top_up_stake      | stake_topped_up | Both   | Restore slashed stake |
+| get_stake         | get_stake         | —          | Both       | View stake balance  |
 
 ---
 
