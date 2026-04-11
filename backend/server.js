@@ -138,19 +138,29 @@ app.post('/api/hub/sync', (req, res) => {
             break;
 
         case 'task_new':
-            store.tasks[data.taskId] = {
-                taskId:           data.taskId,
-                title:            data.title,          // ✅ FIXED — was missing
-                contractorAddr:   data.contractor,
-                reward:           data.reward,
-                status:           'open',
-                bountyHunterAddr: null,
-                applicants:       [],                  // ✅ FIXED — pre-initialised
-                workNote:         null,
-                onChainHash:      null
-            };
-            store.stats.activeBounties++;
-            break;
+           
+
+    if (store.tasks[data.taskId]) {
+        return res.status(400).json({
+            error: "Task already exists — duplicate taskId rejected."
+        });
+    }
+
+    store.tasks[data.taskId] = {
+        taskId:           data.taskId,
+        title:            data.title,
+        contractorAddr:   data.contractor,
+        reward:           data.reward,
+        status:           'open',
+        bountyHunterAddr: null,
+        applicants:       [],
+        workNote:         null,
+        onChainHash:      null
+    };
+
+    store.stats.activeBounties++;
+    break;
+           
 
         case 'task_apply':
             if (store.tasks[data.taskId]) {
@@ -165,17 +175,34 @@ app.post('/api/hub/sync', (req, res) => {
             break;
 
         case 'task_allot':
-            if (store.tasks[data.taskId]) {
-                store.tasks[data.taskId].status           = 'allotted';
-                store.tasks[data.taskId].bountyHunterAddr = data.hunter;
-            }
+           if (store.tasks[data.taskId]) {
+    const task = store.tasks[data.taskId];
+
+    if (task.status !== 'open') return;
+
+    if (!task.applicants.includes(data.hunter)) {
+        console.warn("Allotting non-applicant — allowed but risky");
+    }
+
+    task.status = 'allotted';
+    task.bountyHunterAddr = data.hunter;
+}
             break;
 
         case 'task_sub':
             if (store.tasks[data.taskId]) {
-                store.tasks[data.taskId].status   = 'submitted';
-                store.tasks[data.taskId].workNote = data.workNote;
-            }
+    const task = store.tasks[data.taskId];
+
+
+    if (task.bountyHunterAddr !== data.addr) {
+        return res.status(403).json({
+            error: "Submission rejected: Not assigned to this task."
+        });
+    }
+
+    task.status   = 'submitted';
+    task.workNote = data.workNote;
+}
             break;
 
         case 'task_paid':
