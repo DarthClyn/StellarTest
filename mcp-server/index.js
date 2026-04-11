@@ -47,6 +47,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     return { content: [{ type: "text", text: `FATAL: Cannot derive address. Check STELLAR_SECRET_KEY. ${e.message}` }], isError: true };
   }
 
+
   const syncHub = async (event, data) => {
     await fetch(`${HUB}/api/hub/sync`, {
       method: "POST",
@@ -54,6 +55,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       body: JSON.stringify({ event, data: { ...data, addr: myAddr } })
     });
   };
+
+  // ✅ Sanitize taskId to Stellar Symbol format: uppercase, numbers, underscores only
+  const toSymbol = (id) => id.toUpperCase().replace(/[^A-Z0-9_]/g, '_');
 
   try {
 
@@ -72,7 +76,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     // 1. IDENTITY MANAGEMENT
     if (name === "register_identity") {
       const stroops = (args.stake * 10000000).toString();
-      const agentId = `${ROLE}_${myAddr.slice(-6)}`;
+      const agentId = toSymbol(`${ROLE}_${myAddr.slice(-6)}`);
       console.error(`[STAKE]: Registering ${ROLE} with ${args.stake} XLM...`);
       spawnSync("stellar", ["contract", "invoke", "--id", CONTRACT_ID, ...auth, "--", "register", "--agent_id", agentId, "--addr", myAddr, "--role", ROLE, "--stake", stroops], { encoding: "utf-8" });
       await syncHub('reg', { role: ROLE, stake: args.stake });
@@ -81,10 +85,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
     // 2. CONTRACTOR: BOUNTY CREATION
     if (name === "post_bounty") {
+      const taskId = toSymbol(args.taskId);  // ✅ sanitize
       const rewardStroops = (args.reward * 10000000).toString();
-      spawnSync("stellar", ["contract", "invoke", "--id", CONTRACT_ID, ...auth, "--", "create_task", "--task_id", args.taskId, "--contractor", myAddr, "--reward", rewardStroops], { encoding: "utf-8" });
-      await syncHub('task_new', { taskId: args.taskId, reward: args.reward, contractor: myAddr, title: args.title });
-      return { content: [{ type: "text", text: `Bounty '${args.title}' is live on-chain.` }] };
+      spawnSync("stellar", ["contract", "invoke", "--id", CONTRACT_ID, ...auth, "--", "create_task", "--task_id", taskId, "--contractor", myAddr, "--reward", rewardStroops], { encoding: "utf-8" });
+      await syncHub('task_new', { taskId, reward: args.reward, contractor: myAddr, title: args.title });
+      return { content: [{ type: "text", text: `Bounty '${args.title}' (${taskId}) is live on-chain.` }] };
     }
 
     // ✅ FIX: SCOUT TASKS — Hub-based, not XDR chain events
@@ -101,51 +106,54 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     // 3. HUNTER: APPLICATION
     // ⚠️ Note: request_task does NOT exist in contract — Hub-only until redeployed
     if (name === "apply_for_task") {
-      // spawnSync removed — contract has no request_task fn yet
-      await syncHub('task_apply', { taskId: args.taskId, hunter: myAddr });
-      return { content: [{ type: "text", text: `Applied for ${args.taskId}. Awaiting Contractor allotment.` }] };
+      const taskId = toSymbol(args.taskId);  // ✅ sanitize
+      await syncHub('task_apply', { taskId, hunter: myAddr });
+      return { content: [{ type: "text", text: `Applied for ${taskId}. Awaiting Contractor allotment.` }] };
     }
 
     // 4. CONTRACTOR: ALLOTMENT
     if (name === "assign_worker") {
-      spawnSync("stellar", ["contract", "invoke", "--id", CONTRACT_ID, ...auth, "--", "allot_task", "--task_id", args.taskId, "--contractor", myAddr, "--hunter", args.hunterAddr], { encoding: "utf-8" });
-      await syncHub('task_allot', { taskId: args.taskId, hunter: args.hunterAddr });
-      return { content: [{ type: "text", text: `Task ${args.taskId} officially allotted to ${args.hunterAddr}.` }] };
+      const taskId = toSymbol(args.taskId);  // ✅ sanitize
+      spawnSync("stellar", ["contract", "invoke", "--id", CONTRACT_ID, ...auth, "--", "allot_task", "--task_id", taskId, "--contractor", myAddr, "--hunter", args.hunterAddr], { encoding: "utf-8" });
+      await syncHub('task_allot', { taskId, hunter: args.hunterAddr });
+      return { content: [{ type: "text", text: `Task ${taskId} officially allotted to ${args.hunterAddr}.` }] };
     }
 
     // 5. HUNTER: DELIVERY
     if (name === "deliver_work") {
-      spawnSync("stellar", ["contract", "invoke", "--id", CONTRACT_ID, ...auth, "--", "submit_task", "--task_id", args.taskId, "--hunter", myAddr], { encoding: "utf-8" });
-      await syncHub('task_sub', { taskId: args.taskId, workNote: args.workNote });
+      const taskId = toSymbol(args.taskId);  // ✅ sanitize
+      spawnSync("stellar", ["contract", "invoke", "--id", CONTRACT_ID, ...auth, "--", "submit_task", "--task_id", taskId, "--hunter", myAddr], { encoding: "utf-8" });
+      await syncHub('task_sub', { taskId, workNote: args.workNote });
       return { content: [{ type: "text", text: "Work submitted. Payment challenge ready for Contractor." }] };
     }
 
     // ✅ FIX: initiate_exit handler — was completely missing
     if (name === "initiate_exit") {
-      const agentId = `${ROLE}_${myAddr.slice(-6)}`;
+      const agentId = toSymbol(`${ROLE}_${myAddr.slice(-6)}`);  // ✅ sanitize
       spawnSync("stellar", ["contract", "invoke", "--id", CONTRACT_ID, ...auth, "--", "request_exit", "--agent_id", agentId], { encoding: "utf-8" });
       return { content: [{ type: "text", text: `Exit initiated. 24h cooldown started. Stake will be refunded after cooldown.` }] };
     }
 
     // 6. ✅ FIX: X402 — invoice.destination → invoice.recipient
     if (name === "pay_and_unlock") {
-      const res = await fetch(`${HUB}/api/tasks/${args.taskId}/download?addr=${myAddr}`);
+      const taskId = toSymbol(args.taskId);  // ✅ sanitize
+      const res = await fetch(`${HUB}/api/tasks/${taskId}/download?addr=${myAddr}`);
       if (res.status !== 402) return { content: [{ type: "text", text: "Task not in payment-ready state." }] };
 
       const invoice = await res.json();
-      const stroops = (invoice.invoice.amount * 10000000).toString(); // ✅ invoice.invoice (nested)
-      const recipient = invoice.invoice.recipient;                    // ✅ correct field name
+      const stroops = (invoice.invoice.amount * 10000000).toString();
+      const recipient = invoice.invoice.recipient;
 
       console.error(`[X402]: Paying ${invoice.invoice.amount} USDC to Hunter ${recipient}...`);
       const payRes = spawnSync("stellar", ["contract", "invoke", "--id", USDC_SAC, ...auth, "--", "transfer", "--from", myAddr, "--to", recipient, "--amount", stroops], { encoding: "utf-8" });
-      const txHash = payRes.stdout.match(/["']([a-f0-9]{64})["']/i)?.[1]; // ✅ more robust hash extraction
+      const txHash = payRes.stdout.match(/["']([a-f0-9]{64})["']/i)?.[1];
       if (!txHash) throw new Error("USDC Transfer failed — no tx hash found.");
 
       console.error(`[SETTLE]: Consuming hash ${txHash} on-chain...`);
-      spawnSync("stellar", ["contract", "invoke", "--id", CONTRACT_ID, ...auth, "--", "settle_task", "--task_id", args.taskId, "--contractor", myAddr, "--tx_hash", txHash], { encoding: "utf-8" });
+      spawnSync("stellar", ["contract", "invoke", "--id", CONTRACT_ID, ...auth, "--", "settle_task", "--task_id", taskId, "--contractor", myAddr, "--tx_hash", txHash], { encoding: "utf-8" });
 
-      await syncHub('task_paid', { taskId: args.taskId, txHash });
-      const finalRes = await fetch(`${HUB}/api/tasks/${args.taskId}/download?addr=${myAddr}`, { headers: { 'x-stellar-tx': txHash } });
+      await syncHub('task_paid', { taskId, txHash });
+      const finalRes = await fetch(`${HUB}/api/tasks/${taskId}/download?addr=${myAddr}`, { headers: { 'x-stellar-tx': txHash } });
       const data = await finalRes.json();
 
       return { content: [{ type: "text", text: `SUCCESS! Reward Paid. Unlocked Work: ${data.payload}` }] };
