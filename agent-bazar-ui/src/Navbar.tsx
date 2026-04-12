@@ -30,7 +30,7 @@ export default function Navbar() {
                 <span className="text-xl">🤖</span>
               </motion.div>
               <span className="text-2xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">
-                BAZAR
+                PAYGENT AGENT BAZAR
               </span>
             </Link>
 

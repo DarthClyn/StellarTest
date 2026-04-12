@@ -1,9 +1,11 @@
 // Backend Hub Server - Reloading to apply store.json fixes
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
+const { spawnSync } = require('child_process');
 const app = express();
 
 const uploadDir = path.join(__dirname, 'uploads');
@@ -128,8 +130,147 @@ app.get('/api/agents/:addr/stake', (req, res) => {
 // ---------------------------------------------------------------------------
 
 /**
- * HUNTER: Upload artifacts for a task
+ * Resolve MIME type from filename extension if declared type is generic.
  */
+function getMimeType(filename, declaredMime) {
+    if (declaredMime && declaredMime !== 'application/octet-stream') return declaredMime;
+    const ext = (path.extname(filename) || '').toLowerCase();
+    const map = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png',
+                  '.gif': 'image/gif', '.webp': 'image/webp', '.pdf': 'application/pdf', '.txt': 'text/plain' };
+    return map[ext] || 'application/octet-stream';
+}
+
+/**
+ * HUNTER: Upload artifacts for a task
+ *
+ * judgeWork — vision-capable LLM judge.
+ * @param {string} requirement  - The task title / contractor's requirement.
+ * @param {Array}  files        - Array of stored file metadata objects (must have .filename, .originalName, .mimetype).
+ * @returns {number|null} Score 0-100, or null on API error.
+ */
+async function judgeWork(requirement, files) {
+    log("HUB_JUDGE", `Analyzing submission for: "${requirement}" (${files.length} file(s))`);
+
+    try {
+        const fetchApi = typeof fetch !== "undefined" ? fetch : (...args) => import('node-fetch').then(({default: f}) => f(...args));
+
+        // Build multimodal content — text requirement + embedded images
+        const userContent = [
+            { type: "text", text: `USER_REQUIREMENT: ${requirement}` }
+        ];
+
+        for (const f of files) {
+            const mime = getMimeType(f.originalName, f.mimetype);
+            const filePath = path.join(uploadDir, f.filename);
+
+            if (mime.startsWith('image/') && fs.existsSync(filePath)) {
+                const b64 = fs.readFileSync(filePath).toString('base64');
+                userContent.push({
+                    type: "image_url",
+                    image_url: { url: `data:${mime};base64,${b64}` }
+                });
+                userContent.push({ type: "text", text: `[Image file: ${f.originalName}]` });
+                log("JUDGE_IMAGE", `Embedded image for judging: ${f.originalName} (${(f.size/1024).toFixed(1)} KB)`);
+            } else {
+                userContent.push({ type: "text", text: `[Non-image file: ${f.originalName} — ${mime}]` });
+            }
+        }
+
+        const response = await fetchApi("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+                "Content-Type": "application/json",
+                "HTTP-Referer": "http://localhost:3001",
+                "X-Title": "AgentBazaar Hub"
+            },
+            body: JSON.stringify({
+                model: "google/gemini-3.1-flash-lite-preview", // Vision-capable free model
+                messages: [
+                    {
+                        role: "system",
+                        content: `You are a neutral judge for a decentralized marketplace.
+Compare the USER_REQUIREMENT with the HUNTER_SUBMISSION.
+Rate the work on a scale of 0 to 100.
+- 0-49: Spam, placeholder text, or completely unrelated.
+- 50-79: Attempted but low quality or incomplete.
+- 80-100: High quality and satisfies requirements.
+If images are provided, visually evaluate them against the requirement.
+Output ONLY the integer score. No explanation.`
+                    },
+                    { role: "user", content: userContent }
+                ]
+            })
+        });
+
+        const data = await response.json();
+        if (data.error) {
+            log("JUDGE_API_ERROR", "OpenRouter returned error", { msg: data.error.message || data.error });
+            return null;
+        }
+        const scoreText = (data?.choices?.[0]?.message?.content || "").trim();
+        log("JUDGE_RAW", `Model raw reply: "${scoreText}"`);
+        const score = Math.min(100, Math.max(0, parseInt(scoreText.match(/\d+/)?.[0] ?? "50", 10)));
+        return score;
+    } catch(err) {
+        log("JUDGE_ERROR", "Evaluation failed", { err: err.message });
+        return null;
+    }
+}
+
+/**
+ * Attempt on-chain slash via admin key. Falls back to a hub-store soft-slash if the
+ * contract call fails (e.g. admin key mismatch or contract state issue).
+ *
+ * @param {string} hunterAddr  - Full Stellar public key of the hunter (for hub store update).
+ * @param {string} agentId     - On-chain agent symbol (e.g. "bounty_hunter_XYZABC").
+ * @param {number} amount      - XLM amount to slash.
+ * @param {string} reason      - Short reason string.
+ */
+function slashStakeOnChain(hunterAddr, agentId, amount, reason) {
+    const secretKey = process.env.ADMIN_SECRET_KEY;
+    if (!secretKey) {
+        log("SLASH_ERROR", "ADMIN_SECRET_KEY not set in .env — cannot slash");
+        return;
+    }
+    const toSymbol = (id) => id.toUpperCase().replace(/[^A-Z0-9_]/g, "_");
+    const safeAgentId = toSymbol(agentId);
+    const safeReason  = toSymbol(reason);
+    const stroops     = Math.round(amount * 10_000_000).toString();
+    const amountInStroops = parseInt(stroops, 10);
+
+    log("SLASH_INIT", `Slashing ${amount} XLM from ${safeAgentId}`, { reason, hunterAddr });
+
+    const auth = ["--source", secretKey, "--network", "testnet"];
+    const result = spawnSync("stellar", [
+        "contract", "invoke", "--id", CONTRACT_ID, ...auth, "--",
+        "slash_stake", "--agent_id", safeAgentId, "--amount", stroops, "--reason", safeReason
+    ], { encoding: "utf-8" });
+
+    if (result.status === 0 && !result.error) {
+        log("SLASH_SUCCESS", `On-chain slash OK: ${safeAgentId} -${amount} XLM`);
+        // Sync hub store to match chain state
+        if (hunterAddr && store.identities[hunterAddr]) {
+            const agent = store.identities[hunterAddr];
+            agent.stake     = Math.max(0, (agent.stake || 0) - amountInStroops);
+            agent.stake_xlm = agent.stake / 10_000_000;
+            saveStore();
+        }
+    } else {
+        log("SLASH_FAIL", `On-chain slash FAILED for ${safeAgentId} — applying soft hub penalty`, { stderr: result.stderr?.trim() });
+        // Soft slash: deduct from hub store only so dashboard reflects the penalty
+        if (hunterAddr && store.identities[hunterAddr]) {
+            const agent = store.identities[hunterAddr];
+            agent.stake     = Math.max(0, (agent.stake || 0) - amountInStroops);
+            agent.stake_xlm = agent.stake / 10_000_000;
+            if (!agent.slashHistory) agent.slashHistory = [];
+            agent.slashHistory.push({ reason, amountXLM: amount, onChain: false, timestamp: new Date().toISOString() });
+            saveStore();
+            log("SLASH_SOFT", `Hub-store soft-slash recorded for ${hunterAddr} (-${amount} XLM)`);
+        }
+    }
+}
+
 app.post('/api/tasks/:taskId/upload', upload.array('files'), (req, res) => {
     const { taskId } = req.params;
     const { addr } = req.body;
@@ -156,6 +297,24 @@ app.post('/api/tasks/:taskId/upload', upload.array('files'), (req, res) => {
     saveStore();
 
     log("UPLOAD", "Artifacts stored", { taskId, count: newFiles.length });
+    
+    // AI Vision Judging — async, does not block the upload response
+    const hunterAddr = task.bountyHunterAddr || addr;
+
+    judgeWork(task.title, newFiles).then(score => {
+        log("JUDGE_RESULT", `Task ${taskId} scored ${score}/100.`);
+        // Persist score on the task so dashboard can surface it
+        task.judgeScore = score;
+        task.judgedAt   = new Date().toISOString();
+        saveStore();
+
+        if (score !== null && score < 33) {
+            log("JUDGE_PENALTY", `Score ${score}/100 — triggering hunter penalty...`);
+            const agentId = `bounty_hunter_${hunterAddr.slice(-6)}`;
+            slashStakeOnChain(hunterAddr, agentId, 50, "LOW_QUALITY_SUBMISSION");
+        }
+    }).catch(e => log("JUDGE_ERROR", "Async judge fail", { err: e.message }));
+
     res.json({ success: true, files: newFiles });
 });
 
@@ -202,16 +361,20 @@ app.get('/api/tasks/:taskId/download', (req, res) => {
             txHash: task.onChainHash
         });
 
-        // Enrich deliverables with base64 content for AI viewing
+        // Enrich deliverables with base64 content + direct download URL for AI viewing
         const artifacts = (task.deliverables || []).map(f => {
             const filePath = path.join(uploadDir, f.filename);
+            const mime = getMimeType(f.originalName, f.mimetype);
+            const enriched = {
+                ...f,
+                // url is the stable, directly-serveable path contractors/AI can use
+                url: `http://localhost:${HUB_PORT}/api/files/${encodeURIComponent(f.filename)}`,
+                mimeType: mime
+            };
             if (fs.existsSync(filePath)) {
-                return {
-                    ...f,
-                    content: fs.readFileSync(filePath).toString('base64')
-                };
+                enriched.content = fs.readFileSync(filePath).toString('base64');
             }
-            return f;
+            return enriched;
         });
 
         return res.json({
@@ -241,7 +404,8 @@ app.post('/api/hub/sync', (req, res) => {
     log("SYNC", "Incoming event", {
         event,
         taskId: data?.taskId,
-        addr: data?.addr
+        addr: data?.addr,
+        ...(data?.bounty_hunter ? { bounty_hunter: data.bounty_hunter } : {})
     });
 
     store.eventLog.push({ event, data, timestamp: now });
@@ -463,7 +627,25 @@ app.get('/api/dashboard/agents', (req, res) => {
 });
 
 // ---------------------------------------------------------------------------
-// 5. HEALTH
+// 5. FILE SERVING — direct download for uploaded artifacts
+// ---------------------------------------------------------------------------
+app.get('/api/files/:filename', (req, res) => {
+    const { filename } = req.params;
+    // Sanitize: only allow safe filename characters
+    if (!/^[\w\-. ]+$/.test(filename)) {
+        return res.status(400).json({ error: "Invalid filename" });
+    }
+    const filePath = path.join(uploadDir, filename);
+    if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ error: "File not found" });
+    }
+    // Override the global application/json header for file downloads
+    res.removeHeader('Content-Type');
+    res.sendFile(filePath);
+});
+
+// ---------------------------------------------------------------------------
+// 6. HEALTH
 // ---------------------------------------------------------------------------
 app.get('/health', (req, res) => {
     res.json({

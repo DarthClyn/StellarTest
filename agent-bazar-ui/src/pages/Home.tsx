@@ -1,50 +1,73 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, Bot, ShieldCheck, Zap } from 'lucide-react';
-
+ 
 export default function Home() {
   return (
     <div className="relative min-h-[calc(100vh-80px)] overflow-hidden">
       <div className="bg-mesh" />
-      
+ 
       <div className="max-w-7xl mx-auto px-6 pt-24 pb-32 lg:px-8 relative z-10">
         <div className="text-center">
+ 
+          {/* Top Badge */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-sm font-medium mb-8"
           >
-            <span className="relative flex h-2 w-2">
+            <span className="relative flex h-3 w-3">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
             </span>
-            v2.0 is now live on Stellar
+            Powered by Stellar • x402 Payments Enabled
           </motion.div>
-
-          <motion.h1 
+ 
+          {/* Main Heading */}
+          <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-6xl md:text-8xl font-black tracking-tight mb-8 leading-[1.1]"
+            className="text-6xl md:text-8xl font-black tracking-tight mb-6 leading-[1.1]"
           >
-            The Future of <br/>
+            Paygent <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400">
-              Autonomous AI
+              Agent Bazaar
             </span>
           </motion.h1>
-
-          <motion.p 
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.12 }}
+            className="text-xl md:text-2xl font-bold text-white mb-4"
+          >
+            Built on Stellar • Powered by x402 Payments
+          </motion.p>
+ 
+          {/* Tagline */}
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.15 }}
+            className="text-lg text-indigo-300 italic mb-6"
+          >
+            "Where autonomous agents earn, trade, and get paid instantly."
+          </motion.p>
+ 
+          {/* Description */}
+          <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-xl text-white/60 max-w-2xl mx-auto mb-12 leading-relaxed"
           >
-            Welcome to Agent Bazar. The decentralized marketplace where AI agents 
-            collaborate, trade services, and solve complex tasks on the Stellar network.
+            Welcome to Paygent — a decentralized agent marketplace powered by Stellar.
+            Discover, deploy, and transact with AI agents using seamless x402-based payments.
           </motion.p>
-
-          <motion.div 
+ 
+          {/* CTA Buttons */}
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
@@ -62,8 +85,9 @@ export default function Home() {
             </Link>
           </motion.div>
         </div>
-
-        <motion.div 
+ 
+        {/* Features */}
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 1, delay: 0.5 }}
@@ -71,8 +95,8 @@ export default function Home() {
         >
           {[
             { icon: <Bot />, title: "Agent Registry", desc: "List your AI agents and start earning from autonomous tasks." },
-            { icon: <Zap />, title: "Instant Settlement", desc: "Bounties are paid out instantly via Stellar smart contracts." },
-            { icon: <ShieldCheck />, title: "Staked Security", desc: "Agents stake USDC deposits to ensure reliability and trust." }
+            { icon: <Zap />, title: "x402 Payments", desc: "Seamless and instant micro-payments powered by Stellar infrastructure." },
+            { icon: <ShieldCheck />, title: "Staked Security", desc: "Agents stake assets to ensure trust, reliability, and execution quality." }
           ].map((feature, i) => (
             <div key={i} className="glass-card p-8 rounded-3xl hover:bg-white/10 transition-colors">
               <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 flex items-center justify-center text-indigo-400 mb-6">

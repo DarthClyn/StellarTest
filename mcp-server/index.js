@@ -45,17 +45,36 @@ const toSymbol = (id) => id.toUpperCase().replace(/[^A-Z0-9_]/g, "_");
 /** XLM → stroops */
 const toStroops = (xlm) => Math.round(xlm * 10_000_000).toString();
 
-/** Hub sync — fire and forget with structured error logging */
+/** Hub sync — returns { ok, json } or throws on network error */
 const syncHub = async (event, data) => {
-  try {
-    await fetch(`${HUB}/api/hub/sync`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ event, data: { ...data, addr: MY_ADDR } }),
-    });
-  } catch (e) {
-    console.error(`[HUB SYNC WARN]: Failed to sync event '${event}':`, e.message);
+  const res = await fetch(`${HUB}/api/hub/sync`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ event, data: { ...data, addr: MY_ADDR } }),
+  });
+  const json = await res.json().catch(() => ({}));
+  return { ok: res.ok, status: res.status, json };
+};
+
+/**
+ * Critical hub sync — retries up to maxRetries times with delay.
+ * Throws if all retries fail, so the MCP surfaces the failure instead of silently dropping it.
+ */
+const syncHubCritical = async (event, data, maxRetries = 3, delayMs = 1200) => {
+  let lastErr;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const result = await syncHub(event, data);
+      if (result.ok) return result;
+      lastErr = new Error(`Hub rejected sync (attempt ${attempt}/${maxRetries}): ${JSON.stringify(result.json)}`);
+      console.error(`[HUB SYNC RETRY] event='${event}' attempt=${attempt}/${maxRetries} status=${result.status}`);
+    } catch (e) {
+      lastErr = e;
+      console.error(`[HUB SYNC RETRY] event='${event}' attempt=${attempt}/${maxRetries} error: ${e.message}`);
+    }
+    if (attempt < maxRetries) await new Promise(r => setTimeout(r, delayMs));
   }
+  throw new Error(`[HUB SYNC FAILED] event='${event}' after ${maxRetries} attempts: ${lastErr?.message}`);
 };
 
 /** Run a Stellar CLI command and return { ok, stdout, stderr, status } */
@@ -297,8 +316,24 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         "allot_task", "--task_id", taskId, "--contractor", MY_ADDR, "--bounty_hunter", args.hunterAddr]);
       if (!res.ok) throw new Error(`allot_task failed: ${res.stderr}`);
 
-      await syncHub("task_allot", { taskId, bounty_hunter: args.hunterAddr });
-      return { content: [{ type: "text", text: `Task ${taskId} officially allotted to ${args.hunterAddr}.` }] };
+      // ── Critical sync: retry until hub confirms allotment recorded ──────────
+      await syncHubCritical("task_allot", { taskId, bounty_hunter: args.hunterAddr });
+
+      // ── Verify hub actually recorded the assignment ─────────────────────────
+      try {
+        const { json: tasks } = await hubFetch("/api/dashboard/tasks");
+        const hubTask = (tasks || []).find(t => t.taskId === taskId);
+        if (!hubTask || hubTask.bountyHunterAddr !== args.hunterAddr) {
+          console.error(`[ALLOT VERIFY] Hub task state mismatch — retrying sync once more...`);
+          await syncHubCritical("task_allot", { taskId, bounty_hunter: args.hunterAddr }, 2, 800);
+        } else {
+          console.error(`[ALLOT VERIFY] ✅ Hub confirmed: task ${taskId} → ${args.hunterAddr}`);
+        }
+      } catch (verifyErr) {
+        console.error(`[ALLOT VERIFY WARN] Could not verify hub state: ${verifyErr.message}`);
+      }
+
+      return { content: [{ type: "text", text: `Task ${taskId} officially allotted to ${args.hunterAddr}. Hub sync confirmed.` }] };
     }
 
     // ── deliver_work ──────────────────────────────────────────────────────────
@@ -318,7 +353,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         "submit_task", "--task_id", taskId, "--bounty_hunter", MY_ADDR]);
       if (!res.ok) throw new Error(`submit_task failed: ${res.stderr}`);
 
-      await syncHub("task_sub", { taskId, workNote: args.workNote });
+      // ── Critical sync: retry until hub confirms submission recorded ─────────
+      await syncHubCritical("task_sub", { taskId, workNote: args.workNote });
       return { content: [{ type: "text", text: "Work submitted on-chain. Deliverables synced. Payment challenge ready for Contractor." }] };
     }
 
@@ -405,22 +441,46 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       const files = json.deliverables || [];
       const workNote = json.payload;
+      const judgeScore = json.judgeScore;
 
       let responseText = `--- TASK ${taskId} UNLOCKED ---\n`;
-      responseText += `Work Note: ${workNote}\n\n`;
+      responseText += `Work Note: ${workNote}\n`;
+      if (judgeScore !== undefined) responseText += `Judge Score: ${judgeScore}/100\n`;
+      responseText += `\n`;
+
+      // Build MCP content array — text summary + embedded images for AI vision
+      const contentItems = [];
 
       if (files.length === 0) {
         responseText += "No additional artifacts uploaded by Hunter.";
+        contentItems.push({ type: "text", text: responseText });
       } else {
-        responseText += `Found ${files.length} artifacts:\n`;
+        responseText += `Found ${files.length} artifact(s):\n`;
         files.forEach(f => {
-            responseText += `• ${f.originalName} (${(f.size / 1024).toFixed(1)} KB)\n`;
-            // If it's a small text file, maybe snippet? For now just confirm availability.
+          const mime = f.mimeType || "application/octet-stream";
+          const dlUrl = f.url || `http://localhost:3001/api/files/${encodeURIComponent(f.filename)}`;
+          responseText += `• Original: ${f.originalName} | Server file: ${f.filename}\n`;
+          responseText += `  Type: ${mime} | Size: ${(f.size / 1024).toFixed(1)} KB\n`;
+          responseText += `  Download URL: ${dlUrl}\n`;
         });
-        responseText += `\n(Note: Binary content is encoded in the backend payload. AI can process base64 if needed.)`;
+
+        contentItems.push({ type: "text", text: responseText });
+
+        // Embed images directly so the AI model can visually inspect them
+        for (const f of files) {
+          const mime = f.mimeType || "application/octet-stream";
+          if (mime.startsWith("image/") && f.content) {
+            contentItems.push({
+              type: "image",
+              data: f.content,       // base64 string from backend
+              mimeType: mime
+            });
+            contentItems.push({ type: "text", text: `↑ Image: ${f.originalName}` });
+          }
+        }
       }
 
-      return { content: [{ type: "text", text: responseText }] };
+      return { content: contentItems };
     }
 
     // ── Unknown tool ──────────────────────────────────────────────────────────

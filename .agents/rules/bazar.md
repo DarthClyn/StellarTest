@@ -1,5 +1,5 @@
 ---
-trigger: model_decision
+trigger: always_on
 description: When we are interacting with bazar server , when user say post this task or we are interacting with bazar mcp
 ---
 
