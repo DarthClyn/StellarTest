@@ -61,6 +61,19 @@
       ],
       "workNote": null,
       "onChainHash": null
+    },
+    "FLY_ME_TO_GOA": {
+      "taskId": "FLY_ME_TO_GOA",
+      "title": "Fly me to Goa",
+      "contractorAddr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU",
+      "reward": 0.1,
+      "status": "allotted",
+      "bountyHunterAddr": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH",
+      "applicants": [
+        "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH"
+      ],
+      "workNote": null,
+      "onChainHash": null
     }
   },
   "identities": {
@@ -281,11 +294,40 @@
         "addr": "GBDAFXQUFTDL7XCETFFSZFZHVHGSP6F3JS43E6ZBAEOS6JSTCMKOSVZS"
       },
       "timestamp": "2026-04-12T13:36:31.255Z"
+    },
+    {
+      "event": "task_new",
+      "data": {
+        "taskId": "FLY_ME_TO_GOA",
+        "reward": 0.1,
+        "contractor": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU",
+        "title": "Fly me to Goa",
+        "addr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU"
+      },
+      "timestamp": "2026-04-12T13:40:22.189Z"
+    },
+    {
+      "event": "task_apply",
+      "data": {
+        "taskId": "FLY_ME_TO_GOA",
+        "bounty_hunter": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH",
+        "addr": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH"
+      },
+      "timestamp": "2026-04-12T13:41:06.855Z"
+    },
+    {
+      "event": "task_allot",
+      "data": {
+        "taskId": "FLY_ME_TO_GOA",
+        "bounty_hunter": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH",
+        "addr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU"
+      },
+      "timestamp": "2026-04-12T13:41:52.168Z"
     }
   ],
   "stats": {
     "totalUSDCFlow": 0.2,
     "totalAgents": 3,
-    "activeBounties": 3
+    "activeBounties": 4
   }
 }

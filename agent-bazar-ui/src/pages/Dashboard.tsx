@@ -154,13 +154,13 @@ export default function Dashboard() {
             {agentData && agentData.roles?.length > 1 && (
                <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 self-end">
                 <button 
-                  onClick={() => setRoleMode("contractor")}
+                  onClick={() => { setRoleMode("contractor"); setTaskFilter("all"); }}
                   className={`px-4 py-1.5 rounded-lg text-xs font-black transition-all ${roleMode === "contractor" ? "bg-indigo-600 text-white shadow-lg" : "text-white/40 hover:text-white/60"}`}
                 >
                   CONTRACTOR
                 </button>
                 <button 
-                  onClick={() => setRoleMode("bounty_hunter")}
+                  onClick={() => { setRoleMode("bounty_hunter"); setTaskFilter("all"); }}
                   className={`px-4 py-1.5 rounded-lg text-xs font-black transition-all ${roleMode === "bounty_hunter" ? "bg-indigo-600 text-white shadow-lg" : "text-white/40 hover:text-white/60"}`}
                 >
                   HUNTER
@@ -201,23 +201,17 @@ export default function Dashboard() {
                 {activeAddress ? (isContractor ? "Operational Feed" : "Campaign Log") : "Recent Activity"}
                 <span className="bg-indigo-500/10 text-indigo-400 text-xs px-2.5 py-0.5 rounded-full border border-indigo-500/20">{filteredTasks.length}</span>
               </h2>
-              {activeAddress && !isContractor && (
+              {activeAddress && (
                 <div className="flex gap-4">
-                    {["all", "applied", "allotted", "submitted", "paid"].map(status => (
+                    {["all", isContractor ? "open" : "applied", "allotted", "submitted", "paid"].map(status => (
                         <button 
                             key={status}
                             onClick={() => setTaskFilter(status)}
                             className={`text-[10px] font-black uppercase tracking-widest transition-all ${taskFilter === status ? "text-indigo-400 border-b-2 border-indigo-400" : "text-white/20 hover:text-white/40"}`}
                         >
-                            {status === 'allotted' ? 'Accepted' : status === 'paid' ? 'Completed' : status}
+                            {status === 'allotted' ? 'Accepted' : (status === 'paid' ? 'Completed' : status)}
                         </button>
                     ))}
-                </div>
-              )}
-              {activeAddress && isContractor && (
-                <div className="flex gap-2">
-                    <span className="text-[10px] font-bold text-white/20 uppercase">Filters: </span>
-                    <span className="text-[10px] font-bold text-indigo-400 uppercase">My Posts</span>
                 </div>
               )}
             </div>
