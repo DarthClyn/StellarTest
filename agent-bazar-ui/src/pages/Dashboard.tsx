@@ -244,7 +244,7 @@ export default function Dashboard() {
                         <span>ID: {task.taskId}</span>
                         <span className="flex items-center gap-1.5 border-l border-white/10 pl-4 capitalize tracking-normal text-white/50">
                             <Clock className="w-3 h-3" />
-                            {task.status}
+                            {task.status === "open" && !isContractor && task.applicants?.includes(activeAddress) ? "applied" : task.status}
                         </span>
                       </div>
                     </div>

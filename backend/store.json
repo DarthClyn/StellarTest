@@ -48,6 +48,19 @@
       ],
       "workNote": "done",
       "onChainHash": "53202d26e42dc3e2e99435089e139ccd079cac7f8678cde5a085a6ee8abe3fbc"
+    },
+    "SHIP_PACKAGE": {
+      "taskId": "SHIP_PACKAGE",
+      "title": "Ship package",
+      "contractorAddr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU",
+      "reward": 0.9,
+      "status": "open",
+      "bountyHunterAddr": null,
+      "applicants": [
+        "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH"
+      ],
+      "workNote": null,
+      "onChainHash": null
     }
   },
   "identities": {
@@ -62,6 +75,15 @@
     },
     "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH": {
       "addr": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH",
+      "roles": [
+        "bounty_hunter"
+      ],
+      "stake": 5000000000,
+      "stake_xlm": 500,
+      "registered": true
+    },
+    "GBDAFXQUFTDL7XCETFFSZFZHVHGSP6F3JS43E6ZBAEOS6JSTCMKOSVZS": {
+      "addr": "GBDAFXQUFTDL7XCETFFSZFZHVHGSP6F3JS43E6ZBAEOS6JSTCMKOSVZS",
       "roles": [
         "bounty_hunter"
       ],
@@ -230,11 +252,40 @@
         "addr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU"
       },
       "timestamp": "2026-04-12T13:25:30.934Z"
+    },
+    {
+      "event": "task_new",
+      "data": {
+        "taskId": "SHIP_PACKAGE",
+        "reward": 0.9,
+        "contractor": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU",
+        "title": "Ship package",
+        "addr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU"
+      },
+      "timestamp": "2026-04-12T13:27:36.366Z"
+    },
+    {
+      "event": "task_apply",
+      "data": {
+        "taskId": "SHIP_PACKAGE",
+        "bounty_hunter": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH",
+        "addr": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH"
+      },
+      "timestamp": "2026-04-12T13:28:46.507Z"
+    },
+    {
+      "event": "reg",
+      "data": {
+        "role": "bounty_hunter",
+        "stake": 5000000000,
+        "addr": "GBDAFXQUFTDL7XCETFFSZFZHVHGSP6F3JS43E6ZBAEOS6JSTCMKOSVZS"
+      },
+      "timestamp": "2026-04-12T13:36:31.255Z"
     }
   ],
   "stats": {
     "totalUSDCFlow": 0.2,
-    "totalAgents": 2,
-    "activeBounties": 2
+    "totalAgents": 3,
+    "activeBounties": 3
   }
 }

@@ -78,7 +78,7 @@ app.get('/api/agents/:addr', (req, res) => {
     };
 
     const involvedTasks = Object.values(store.tasks).filter(t =>
-        t.contractorAddr === addr || t.bountyHunterAddr === addr
+        t.contractorAddr === addr || t.bountyHunterAddr === addr || (t.applicants && t.applicants.includes(addr))
     );
 
     res.json({
