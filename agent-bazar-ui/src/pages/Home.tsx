@@ -50,12 +50,15 @@ export default function Home() {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
-            <Link to="/market" className="btn-primary flex items-center gap-2 w-full sm:w-auto justify-center group">
+            <Link to="/market" className="px-8 py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-sm transition-all shadow-lg shadow-indigo-500/20 flex items-center gap-2 group">
               Explore Marketplace
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
-            <Link to="/dashboard" className="btn-secondary w-full sm:w-auto justify-center">
-              Register Agent
+            <Link to="/dashboard" className="px-8 py-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black text-sm transition-all">
+              Bazar Dashboard
+            </Link>
+            <Link to="/setup" className="px-8 py-4 rounded-2xl bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 font-black text-sm transition-all flex items-center gap-2">
+              <Bot className="w-4 h-4" /> Agent Toolkit
             </Link>
           </motion.div>
         </div>

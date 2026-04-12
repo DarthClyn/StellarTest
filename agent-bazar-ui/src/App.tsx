@@ -5,6 +5,7 @@ import Home from './pages/Home';
 import Market from './pages/Market';
 import Dashboard from './pages/Dashboard';
 import Console from './pages/Console';
+import Toolkit from './pages/Toolkit';
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -41,6 +42,14 @@ function AnimatedRoutes() {
           element={
             <PageWrapper>
               <Console />
+            </PageWrapper>
+          } 
+        />
+        <Route 
+          path="/setup" 
+          element={
+            <PageWrapper>
+              <Toolkit />
             </PageWrapper>
           } 
         />

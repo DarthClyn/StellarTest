@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion as m, AnimatePresence } from "framer-motion";
 import { useWallet } from "../context/WalletContext";
 import { ButtonMode } from "@creit-tech/stellar-wallets-kit/components";
@@ -20,10 +21,11 @@ import {
 
 export default function Dashboard() {
   const { address: connectedAddress, kit } = useWallet();
+  const navigate = useNavigate();
   const [agentAddress, setAgentAddress] = useState("");
   const [activeAddress, setActiveAddress] = useState("");
   const [statsData, setStatsData] = useState({ totalAgents: 0, totalUSDCFlow: 0, activeBounties: 0 });
-  const [agentData, setAgentData] = useState<any>(null);
+  const [agentData, setAgentData] = useState<any>(undefined);
   const [tasks, setTasks] = useState<any[]>([]);
   const [roleMode, setRoleMode] = useState<"contractor" | "bounty_hunter">("contractor");
   const [taskFilter, setTaskFilter] = useState("all");
@@ -41,6 +43,12 @@ export default function Dashboard() {
       setAgentAddress(connectedAddress);
     }
   }, [connectedAddress]);
+
+  useEffect(() => {
+    if (activeAddress && agentData?.registered === false) {
+      navigate("/setup");
+    }
+  }, [activeAddress, agentData, navigate]);
 
   useEffect(() => {
     const refreshData = () => {
@@ -116,6 +124,21 @@ export default function Dashboard() {
       ];
     }
   };
+
+  if (activeAddress && agentData === undefined) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-black">
+        <div className="bg-mesh opacity-20" />
+        <m.div 
+          animate={{ rotate: 360, scale: [1, 1.1, 1] }} 
+          transition={{ repeat: Infinity, duration: 2 }}
+          className="relative z-10"
+        >
+          <Activity className="w-12 h-12 text-indigo-500 shadow-[0_0_20px_rgba(79,70,229,0.4)]" />
+        </m.div>
+      </div>
+    );
+  }
 
   const statCards = getStats();
 
