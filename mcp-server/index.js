@@ -3,6 +3,8 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { spawnSync } from "child_process";
 import { Keypair } from "@stellar/stellar-sdk";
+import fs from "node:fs";
+import path from "node:path";
 
 /**
  * --- IRON CLAD CONFIGURATION ---
@@ -122,6 +124,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     { name: "assign_worker",     description: "Contractor: Allot a task to a specific hunter.",                                            inputSchema: { type: "object", properties: { taskId: { type: "string" }, hunterAddr: { type: "string" } }, required: ["taskId", "hunterAddr"] } },
     { name: "deliver_work",      description: "Hunter: Submit work payload to Hub and Chain.",                                             inputSchema: { type: "object", properties: { taskId: { type: "string" }, workNote: { type: "string" } }, required: ["taskId", "workNote"] } },
     { name: "pay_and_unlock",    description: "Contractor: The X402 Master Tool. Pays USDC, Settles Chain, Unlocks Data.",                 inputSchema: { type: "object", properties: { taskId: { type: "string" } }, required: ["taskId"] } },
+    { name: "upload_deliverables", description: "Hunter: Upload off-chain files (PDF, JPG, TXT) to the Hub before delivering.", inputSchema: { type: "object", properties: { taskId: { type: "string" }, filePaths: { type: "array", items: { type: "string" }, description: "Local paths to files" } }, required: ["taskId", "filePaths"] } },
+    { name: "get_task_deliverables", description: "Contractor: Download or view files submitted for a task.", inputSchema: { type: "object", properties: { taskId: { type: "string" } }, required: ["taskId"] } },
   ],
 }));
 
@@ -301,12 +305,21 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     if (name === "deliver_work") {
       const taskId = toSymbol(args.taskId);
 
+      // Check if deliverables exist on hub first (Soft check)
+      try {
+        const { json: task } = await hubFetch(`/api/agents/${MY_ADDR}`);
+        const t = (task.history || []).find(x => x.taskId === taskId);
+        if (t && (!t.deliverables || t.deliverables.length === 0)) {
+            console.error(`[WARN]: No artifacts found for ${taskId}. Reminding hunter...`);
+        }
+      } catch (e) { /* ignore check error */ }
+
       const res = runStellar(["contract", "invoke", "--id", CONTRACT_ID, ...auth, "--",
         "submit_task", "--task_id", taskId, "--bounty_hunter", MY_ADDR]);
       if (!res.ok) throw new Error(`submit_task failed: ${res.stderr}`);
 
       await syncHub("task_sub", { taskId, workNote: args.workNote });
-      return { content: [{ type: "text", text: "Work submitted on-chain. Payment challenge ready for Contractor." }] };
+      return { content: [{ type: "text", text: "Work submitted on-chain. Deliverables synced. Payment challenge ready for Contractor." }] };
     }
 
     // ── pay_and_unlock (X402) ─────────────────────────────────────────────────
@@ -344,6 +357,70 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       });
 
       return { content: [{ type: "text", text: `SUCCESS! Reward Paid. Unlocked Work: ${data.payload}` }] };
+    }
+
+    // ── upload_deliverables ──────────────────────────────────────────────────
+    if (name === "upload_deliverables") {
+      const taskId = toSymbol(args.taskId);
+      const formData = new FormData();
+      formData.append("addr", MY_ADDR);
+
+      console.error(`[UPLOAD]: Reading ${args.filePaths.length} files for task ${taskId}...`);
+
+      for (const fpath of args.filePaths) {
+        if (!fs.existsSync(fpath)) throw new Error(`File not found: ${fpath}`);
+        const fileBuffer = fs.readFileSync(fpath);
+        const blob = new Blob([fileBuffer]);
+        formData.append("files", blob, path.basename(fpath));
+      }
+
+      const res = await fetch(`${HUB}/api/tasks/${taskId}/upload`, {
+        method: "POST",
+        body: formData
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Upload failed (${res.status}): ${errText}`);
+      }
+
+      const data = await res.json();
+      return { content: [{ type: "text", text: `Artifacts shared with Hub: ${data.files.length} files uploaded for task ${taskId}.` }] };
+    }
+
+    // ── get_task_deliverables ────────────────────────────────────────────────
+    if (name === "get_task_deliverables") {
+      const taskId = toSymbol(args.taskId);
+      console.error(`[DOWNLOAD]: Requesting data for task ${taskId}...`);
+
+      const { status, json } = await hubFetch(`/api/tasks/${taskId}/download?addr=${MY_ADDR}`);
+      
+      if (status === 402) {
+        return { content: [{ type: "text", text: "LOCKED: Payment required. Run 'pay_and_unlock' first to access deliverables." }] };
+      }
+      
+      if (status !== 200) {
+        return { content: [{ type: "text", text: `Access Denied or Error (${status}): ${json.error || "Unknown"}` }], isError: true };
+      }
+
+      const files = json.deliverables || [];
+      const workNote = json.payload;
+
+      let responseText = `--- TASK ${taskId} UNLOCKED ---\n`;
+      responseText += `Work Note: ${workNote}\n\n`;
+
+      if (files.length === 0) {
+        responseText += "No additional artifacts uploaded by Hunter.";
+      } else {
+        responseText += `Found ${files.length} artifacts:\n`;
+        files.forEach(f => {
+            responseText += `• ${f.originalName} (${(f.size / 1024).toFixed(1)} KB)\n`;
+            // If it's a small text file, maybe snippet? For now just confirm availability.
+        });
+        responseText += `\n(Note: Binary content is encoded in the backend payload. AI can process base64 if needed.)`;
+      }
+
+      return { content: [{ type: "text", text: responseText }] };
     }
 
     // ── Unknown tool ──────────────────────────────────────────────────────────

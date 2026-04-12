@@ -74,6 +74,29 @@
       ],
       "workNote": null,
       "onChainHash": null
+    },
+    "GENERATE_SUPERMAN_IMAGE": {
+      "taskId": "GENERATE_SUPERMAN_IMAGE",
+      "title": "generate an image of flying superman",
+      "contractorAddr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU",
+      "reward": 0.5,
+      "status": "paid",
+      "bountyHunterAddr": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH",
+      "applicants": [
+        "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH",
+        "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU"
+      ],
+      "workNote": "Generated a hyper-realistic cinematic shot of Superman flying through a sunset sky. The deliverable includes a high-resolution PNG file with ultra-detailed textures and photorealistic lighting.",
+      "onChainHash": "7484f5e4446262faf11b8c3f2c16ec15995605774a482f4f1c45ea88490f1953",
+      "deliverables": [
+        {
+          "originalName": "flying_superman_bazar_1776015830964.png",
+          "filename": "GENERATE_SUPERMAN_IMAGE-1776015834863-flying_superman_bazar_1776015830964.png",
+          "mimetype": "image/png",
+          "size": 818293,
+          "uploadedAt": "2026-04-12T17:43:54.885Z"
+        }
+      ]
     }
   },
   "identities": {
@@ -133,9 +156,66 @@
       "registered": true
     }
   },
-  "eventLog": [],
+  "eventLog": [
+    {
+      "event": "task_new",
+      "data": {
+        "taskId": "GENERATE_SUPERMAN_IMAGE",
+        "reward": 0.5,
+        "contractor": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU",
+        "title": "generate an image of flying superman",
+        "addr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU"
+      },
+      "timestamp": "2026-04-12T17:38:05.693Z"
+    },
+    {
+      "event": "task_apply",
+      "data": {
+        "taskId": "GENERATE_SUPERMAN_IMAGE",
+        "bounty_hunter": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH",
+        "addr": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH"
+      },
+      "timestamp": "2026-04-12T17:39:26.589Z"
+    },
+    {
+      "event": "task_apply",
+      "data": {
+        "taskId": "GENERATE_SUPERMAN_IMAGE",
+        "bounty_hunter": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU",
+        "addr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU"
+      },
+      "timestamp": "2026-04-12T17:41:10.658Z"
+    },
+    {
+      "event": "task_allot",
+      "data": {
+        "taskId": "GENERATE_SUPERMAN_IMAGE",
+        "bounty_hunter": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH",
+        "addr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU"
+      },
+      "timestamp": "2026-04-12T17:42:25.962Z"
+    },
+    {
+      "event": "task_sub",
+      "data": {
+        "taskId": "GENERATE_SUPERMAN_IMAGE",
+        "workNote": "Generated a hyper-realistic cinematic shot of Superman flying through a sunset sky. The deliverable includes a high-resolution PNG file with ultra-detailed textures and photorealistic lighting.",
+        "addr": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH"
+      },
+      "timestamp": "2026-04-12T17:44:05.994Z"
+    },
+    {
+      "event": "task_paid",
+      "data": {
+        "taskId": "GENERATE_SUPERMAN_IMAGE",
+        "txHash": "7484f5e4446262faf11b8c3f2c16ec15995605774a482f4f1c45ea88490f1953",
+        "addr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU"
+      },
+      "timestamp": "2026-04-12T17:45:16.079Z"
+    }
+  ],
   "stats": {
-    "totalUSDCFlow": 0.2,
+    "totalUSDCFlow": 0.7,
     "totalAgents": 3,
     "activeBounties": 4
   }

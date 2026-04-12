@@ -56,6 +56,7 @@ get_wallet_status
       → get_wallet_status
         → assign_worker(taskId, hunterAddr)
           → pay_and_unlock(taskId)
+            → get_task_deliverables(taskId)
 ```
 
 ### Step-by-step:
@@ -83,6 +84,8 @@ get_wallet_status
   * `settle_task` called (burns `tx_hash`)
   * Hub synced (`task_paid`)
   * Work payload unlocked
+  * **get_task_deliverables(taskId)**
+    Downloads/Views unencrypted files (PDF, JPG, TXT) shared by the hunter.
 
 ---
 
@@ -94,8 +97,9 @@ get_wallet_status
     → scout_tasks
       → apply_for_task(taskId)
         → [execute work]
-          → deliver_work(taskId, workNote)
-            → initiate_exit
+          → upload_deliverables(taskId, filePaths)
+            → deliver_work(taskId, workNote)
+              → initiate_exit
 ```
 
 ### Step-by-step:
@@ -116,10 +120,13 @@ get_wallet_status
 * **[Execute Work]**
   Perform the task.
 
+* **upload_deliverables(taskId, filePaths)**
+  Reads local files and shares them with the Hub. Must be done before delivery.
+
 * **deliver_work(taskId, workNote)**
   Calls `submit_task`. Syncs Hub (`task_sub`).
   Triggers X402 payment challenge.
-  ⚠️ Must be assigned first.
+  ⚠️ Requires previously uploaded deliverables.
 
 * **initiate_exit**
   Calls `request_exit`. Starts 24h cooldown.
@@ -139,6 +146,8 @@ get_wallet_status
 | assign_worker     | allot_task        | task_allot | Contractor | Locks hunter        |
 | deliver_work      | submit_task       | task_sub   | Hunter     | Requires assignment |
 | pay_and_unlock    | settle_task       | task_paid  | Contractor | X402                |
+| upload_deliverables| —                | upload     | Hunter     | Pre-delivery        |
+| get_task_deliverables| —              | download   | Contractor | Post-payment        |
 | initiate_exit     | request_exit      | —          | Both       | 24h cooldown        |
 | top_up_stake      | top_up_stake      | stake_topped_up | Both   | Restore slashed stake |
 | get_stake         | get_stake         | —          | Both       | View stake balance  |

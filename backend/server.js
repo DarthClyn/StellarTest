@@ -3,7 +3,21 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const multer = require('multer');
 const app = express();
+
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, uploadDir),
+    filename: (req, file, cb) => {
+        const taskId = req.params.taskId;
+        const safeName = file.originalname.replace(/[^a-z0-9.]/gi, '_').toLowerCase();
+        cb(null, `${taskId}-${Date.now()}-${safeName}`);
+    }
+});
+const upload = multer({ storage: storage });
 
 app.use(cors());
 app.use(express.json());
@@ -110,8 +124,41 @@ app.get('/api/agents/:addr/stake', (req, res) => {
 });
 
 // ---------------------------------------------------------------------------
-// 2. X402 PAYMENT GATEWAY
+// 2. X402 PAYMENT GATEWAY & ARTIFACTS
 // ---------------------------------------------------------------------------
+
+/**
+ * HUNTER: Upload artifacts for a task
+ */
+app.post('/api/tasks/:taskId/upload', upload.array('files'), (req, res) => {
+    const { taskId } = req.params;
+    const { addr } = req.body;
+    const task = store.tasks[taskId];
+
+    if (!task) return res.status(404).json({ error: "Task not found" });
+    
+    // Authorization: Only assigned hunter can upload
+    if (task.bountyHunterAddr && task.bountyHunterAddr !== addr) {
+        return res.status(403).json({ error: "Forbidden: Not the assigned hunter" });
+    }
+
+    if (!task.deliverables) task.deliverables = [];
+
+    const newFiles = (req.files || []).map(f => ({
+        originalName: f.originalname,
+        filename: f.filename,
+        mimetype: f.mimetype,
+        size: f.size,
+        uploadedAt: new Date().toISOString()
+    }));
+
+    task.deliverables.push(...newFiles);
+    saveStore();
+
+    log("UPLOAD", "Artifacts stored", { taskId, count: newFiles.length });
+    res.json({ success: true, files: newFiles });
+});
+
 app.get('/api/tasks/:taskId/download', (req, res) => {
     const { taskId } = req.params;
     const contractorAddr = req.query.addr;
@@ -155,9 +202,22 @@ app.get('/api/tasks/:taskId/download', (req, res) => {
             txHash: task.onChainHash
         });
 
+        // Enrich deliverables with base64 content for AI viewing
+        const artifacts = (task.deliverables || []).map(f => {
+            const filePath = path.join(uploadDir, f.filename);
+            if (fs.existsSync(filePath)) {
+                return {
+                    ...f,
+                    content: fs.readFileSync(filePath).toString('base64')
+                };
+            }
+            return f;
+        });
+
         return res.json({
             success: true,
             payload: task.workNote || "CONFIDENTIAL_DELIVERY_DATA",
+            deliverables: artifacts,
             receipt: {
                 from: task.contractorAddr,
                 to: task.bountyHunterAddr,
