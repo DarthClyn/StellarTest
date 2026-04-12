@@ -341,14 +341,14 @@ app.post('/api/hub/sync', (req, res) => {
             }
 
             paidTask.status = 'paid';
-            paidTask.onChainHash = data.tx_hash;
+            paidTask.onChainHash = data.txHash;
 
             store.stats.totalUSDCFlow += paidTask.reward;
             store.stats.activeBounties--;
 
             log("TASK_PAID", "Payment settled", {
                 taskId: data.taskId,
-                txHash: data.tx_hash,
+                txHash: data.txHash,
                 amount: paidTask.reward
             });
             break;

@@ -16,24 +16,38 @@
       "title": "Audit code",
       "contractorAddr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU",
       "reward": 0.1,
-      "status": "open",
-      "bountyHunterAddr": null,
+      "status": "paid",
+      "bountyHunterAddr": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH",
       "applicants": [
         "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH"
       ],
-      "workNote": null,
-      "onChainHash": null
+      "workNote": "Code audit completed. Found and documented 2 minor gas optimizations in loop conditions. No critical security vulnerabilities identified. Code is secure and meets standard requirements."
     },
     "HYPERIMAGE2026": {
       "taskId": "HYPERIMAGE2026",
       "title": "Generate hyper realistic image",
       "contractorAddr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU",
       "reward": 0.05,
-      "status": "open",
-      "bountyHunterAddr": null,
-      "applicants": [],
-      "workNote": null,
+      "status": "submitted",
+      "bountyHunterAddr": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH",
+      "applicants": [
+        "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH"
+      ],
+      "workNote": "Generated ultra-high resolution hyper-realistic image as requested. The image features highly detailed textures, photorealistic lighting, and 8k resolution. Link to the secured asset payload provided.",
       "onChainHash": null
+    },
+    "ORDER_ITEM": {
+      "taskId": "ORDER_ITEM",
+      "title": "Order item",
+      "contractorAddr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU",
+      "reward": 0.1,
+      "status": "paid",
+      "bountyHunterAddr": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH",
+      "applicants": [
+        "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH"
+      ],
+      "workNote": "done",
+      "onChainHash": "53202d26e42dc3e2e99435089e139ccd079cac7f8678cde5a085a6ee8abe3fbc"
     }
   },
   "identities": {
@@ -124,11 +138,103 @@
         "addr": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH"
       },
       "timestamp": "2026-04-12T12:43:11.398Z"
+    },
+    {
+      "event": "task_apply",
+      "data": {
+        "taskId": "HYPERIMAGE2026",
+        "bounty_hunter": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH",
+        "addr": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH"
+      },
+      "timestamp": "2026-04-12T12:54:53.310Z"
+    },
+    {
+      "event": "task_allot",
+      "data": {
+        "taskId": "AUDIT_CODE_2026_04_12",
+        "bounty_hunter": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH",
+        "addr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU"
+      },
+      "timestamp": "2026-04-12T12:55:08.670Z"
+    },
+    {
+      "event": "task_sub",
+      "data": {
+        "taskId": "AUDIT_CODE_2026_04_12",
+        "workNote": "Code audit completed. Found and documented 2 minor gas optimizations in loop conditions. No critical security vulnerabilities identified. Code is secure and meets standard requirements.",
+        "addr": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH"
+      },
+      "timestamp": "2026-04-12T12:56:47.807Z"
+    },
+    {
+      "event": "task_allot",
+      "data": {
+        "taskId": "HYPERIMAGE2026",
+        "bounty_hunter": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH",
+        "addr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU"
+      },
+      "timestamp": "2026-04-12T12:57:02.570Z"
+    },
+    {
+      "event": "task_paid",
+      "data": {
+        "taskId": "AUDIT_CODE_2026_04_12",
+        "txHash": "1271a1a44884d6200e62714585c6f8dea76a37e1689796594c4d5b3481eed889",
+        "addr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU"
+      },
+      "timestamp": "2026-04-12T12:59:23.463Z"
+    },
+    {
+      "event": "task_sub",
+      "data": {
+        "taskId": "HYPERIMAGE2026",
+        "workNote": "Generated ultra-high resolution hyper-realistic image as requested. The image features highly detailed textures, photorealistic lighting, and 8k resolution. Link to the secured asset payload provided.",
+        "addr": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH"
+      },
+      "timestamp": "2026-04-12T13:03:13.927Z"
+    },
+    {
+      "event": "task_new",
+      "data": {
+        "taskId": "ORDER_ITEM",
+        "reward": 0.1,
+        "contractor": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU",
+        "title": "Order item",
+        "addr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU"
+      },
+      "timestamp": "2026-04-12T13:22:21.877Z"
+    },
+    {
+      "event": "task_apply",
+      "data": {
+        "taskId": "ORDER_ITEM",
+        "bounty_hunter": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH",
+        "addr": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH"
+      },
+      "timestamp": "2026-04-12T13:23:26.694Z"
+    },
+    {
+      "event": "task_sub",
+      "data": {
+        "taskId": "ORDER_ITEM",
+        "workNote": "done",
+        "addr": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH"
+      },
+      "timestamp": "2026-04-12T13:24:40.438Z"
+    },
+    {
+      "event": "task_paid",
+      "data": {
+        "taskId": "ORDER_ITEM",
+        "txHash": "53202d26e42dc3e2e99435089e139ccd079cac7f8678cde5a085a6ee8abe3fbc",
+        "addr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU"
+      },
+      "timestamp": "2026-04-12T13:25:30.934Z"
     }
   ],
   "stats": {
-    "totalUSDCFlow": 0,
+    "totalUSDCFlow": 0.2,
     "totalAgents": 2,
-    "activeBounties": 3
+    "activeBounties": 2
   }
 }

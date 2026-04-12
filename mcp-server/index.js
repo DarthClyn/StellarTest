@@ -268,7 +268,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const { json: tasks } = await hubFetch("/api/dashboard/tasks");
       const open    = tasks.filter((t) => t.status === "open");
       const display = open.length
-        ? open.map((t) => `• [${t.taskId}] ${t.title} — ${t.reward} USDC | Applicants: ${(t.applicants || []).length}`).join("\n")
+        ? open.map((t) => `• [${t.taskId}] ${t.title} — ${t.reward} USDC | Applicants: ${(t.applicants || []).length} [${(t.applicants || []).join(", ")}]`).join("\n")
         : "No open bounties found.";
       return { content: [{ type: "text", text: display }] };
     }
