@@ -72,4 +72,7 @@ No Free Work — Hunter must NOT call deliver_work until contractor has called a
 Replay Protection — Each tx_hash is burned by settle_task. Same payment hash cannot unlock a second task.
 Dual Role — Same wallet can be both contractor and bounty_hunter. Hub tracks roles and stakes independently per address.
 Hub is a Mirror — Hub state is in-memory. If Hub restarts, state resets. All source-of-truth is on Soroban chain.
-
+Every `deliver_work` call is instantly analyzed by the Hub's LLM Judge.
+Submissions scoring below 50/100 are flagged as "Spam."
+If flagged, the Hub will automatically call `slash_agent` on-chain, deducting 500 XLM from your stake. This is non-reversible.
+Contractors are advised to check `get_wallet_status` and only pay if `qualityScore` > 70.

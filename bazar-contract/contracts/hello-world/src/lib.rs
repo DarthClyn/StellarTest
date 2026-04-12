@@ -119,4 +119,18 @@ pub fn request_task(env: Env, task_id: Symbol, hunter: Address) {
         // Publish Event with Hash for Hub verification
         env.events().publish((Symbol::new(&env, "task_paid"), task_id), tx_hash);
     }
+    pub fn slash_agent(env: Env, admin: Address, agent_id: Symbol, penalty: i128) {
+    admin.require_auth(); // Only the Hub/Admin can call this
+
+    let mut agent: Agent = env.storage().persistent().get(&agent_id).unwrap();
+    
+    // Safety check: Don't slash more than they have
+    let actual_penalty = if penalty > agent.stake { agent.stake } else { penalty };
+    
+    agent.stake -= actual_penalty;
+    env.storage().persistent().set(&agent_id, &agent);
+
+    // Emit event so the Hub knows the slash happened on-chain
+    env.events().publish((Symbol::new(&env, "slash"), agent_id), actual_penalty);
+    }
 }

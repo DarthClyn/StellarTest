@@ -3,10 +3,10 @@
     "bazar-poster-mcp": {
       "command": "node",
       "args": [
-        "C:\\Users\\Admin\\Downloads\\CODZ\\Stellar_Test1\\mcp-server\\index.js"
+        "G:\\Gauranshi\\Web3\\StellarTest\\mcp-server\\index.js"
       ],
       "env": {
-        "STELLAR_SECRET_KEY": "SB7T3XQ44HBVGGB6PZ4DX6XBBNLMN6TMANORGEXUHDSIHX4GHZFEFC3V",
+        "STELLAR_SECRET_KEY": "SCD2KZWT7MCDEMUZQM6X65CLQOGV4YOAS6X45TFHO22Y7ARAUKO7AC34",
         "AGENT_ROLE": "contractor",
         "HUB_URL": "http://localhost:3001"
       }

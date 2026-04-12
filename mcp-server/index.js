@@ -22,16 +22,28 @@ const server = new Server(
  */
 server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: [
-    { name: "verify_address",    description: "Derive and verify your Stellar address from secret key.", inputSchema: { type: "object", properties: {} } },
+    { name: "verify_address", description: "Derive and verify your Stellar address from secret key.", inputSchema: { type: "object", properties: {} } },
     { name: "get_wallet_status", description: "Get address and Hub registration status.", inputSchema: { type: "object", properties: {} } },
     { name: "register_identity", description: "Stake XLM to join (Contractor: 2k, Hunter: 5k).", inputSchema: { type: "object", properties: { stake: { type: "number" } }, required: ["stake"] } },
-    { name: "post_bounty",       description: "Contractor: Create a new task on-chain.", inputSchema: { type: "object", properties: { taskId: { type: "string" }, title: { type: "string" }, reward: { type: "number" } }, required: ["taskId", "title", "reward"] } },
-    { name: "scout_tasks",       description: "Hunter: Find open bounties on the Hub.", inputSchema: { type: "object", properties: {} } },
-    { name: "apply_for_task",    description: "Hunter: Request a task on-chain.", inputSchema: { type: "object", properties: { taskId: { type: "string" } }, required: ["taskId"] } },
-    { name: "assign_worker",     description: "Contractor: Allot a task to a specific hunter.", inputSchema: { type: "object", properties: { taskId: { type: "string" }, hunterAddr: { type: "string" } }, required: ["taskId", "hunterAddr"] } },
-    { name: "deliver_work",      description: "Hunter: Submit work payload to Hub and Chain.", inputSchema: { type: "object", properties: { taskId: { type: "string" }, workNote: { type: "string" } }, required: ["taskId", "workNote"] } },
-    { name: "pay_and_unlock",    description: "Contractor: The X402 Master Tool. Pays USDC, Settles Chain, Unlocks Data.", inputSchema: { type: "object", properties: { taskId: { type: "string" } }, required: ["taskId"] } },
-    { name: "initiate_exit",     description: "Agent: Start 24h cooldown to withdraw stake.", inputSchema: { type: "object", properties: {} } }
+    { name: "post_bounty", description: "Contractor: Create a new task on-chain.", inputSchema: { type: "object", properties: { taskId: { type: "string" }, title: { type: "string" }, reward: { type: "number" } }, required: ["taskId", "title", "reward"] } },
+    { name: "scout_tasks", description: "Hunter: Find open bounties on the Hub.", inputSchema: { type: "object", properties: {} } },
+    { name: "apply_for_task", description: "Hunter: Request a task on-chain.", inputSchema: { type: "object", properties: { taskId: { type: "string" } }, required: ["taskId"] } },
+    { name: "assign_worker", description: "Contractor: Allot a task to a specific hunter.", inputSchema: { type: "object", properties: { taskId: { type: "string" }, hunterAddr: { type: "string" } }, required: ["taskId", "hunterAddr"] } },
+    // { name: "deliver_work",      description: "Hunter: Submit work payload to Hub and Chain.", inputSchema: { type: "object", properties: { taskId: { type: "string" }, workNote: { type: "string" } }, required: ["taskId", "workNote"] } },
+    {
+      name: "deliver_work",
+      description: "Hunter: Submit work. WARNING: Low quality will trigger a stake penalty.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          taskId: { type: "string" },
+          workNote: { type: "string" }
+        },
+        required: ["taskId", "workNote"]
+      }
+    },
+    { name: "pay_and_unlock", description: "Contractor: The X402 Master Tool. Pays USDC, Settles Chain, Unlocks Data.", inputSchema: { type: "object", properties: { taskId: { type: "string" } }, required: ["taskId"] } },
+    { name: "initiate_exit", description: "Agent: Start 24h cooldown to withdraw stake.", inputSchema: { type: "object", properties: {} } }
   ]
 }));
 
@@ -129,11 +141,21 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     }
 
     // 5. HUNTER: DELIVERY
+    // if (name === "deliver_work") {
+    //   const taskId = toSymbol(args.taskId);  // ✅ sanitize
+    //   spawnSync("stellar", ["contract", "invoke", "--id", CONTRACT_ID, ...auth, "--", "submit_task", "--task_id", taskId, "--bounty_hunter", myAddr], { encoding: "utf-8" });
+    //   await syncHub('task_sub', { taskId, workNote: args.workNote });
+    //   return { content: [{ type: "text", text: "Work submitted. Payment challenge ready for Contractor." }] };
+    // }
     if (name === "deliver_work") {
-      const taskId = toSymbol(args.taskId);  // ✅ sanitize
-      spawnSync("stellar", ["contract", "invoke", "--id", CONTRACT_ID, ...auth, "--", "submit_task", "--task_id", taskId, "--bounty_hunter", myAddr], { encoding: "utf-8" });
+      const taskId = toSymbol(args.taskId);
+      // 1. Submit on-chain first
+      spawnSync("stellar", ["contract", "invoke", "--id", CONTRACT_ID, ...auth, "--", "submit_task", "--task_id", taskId, "--bounty_hunter", myAddr]);
+
+      // 2. Sync to Hub (This triggers the Judge in server.js)
       await syncHub('task_sub', { taskId, workNote: args.workNote });
-      return { content: [{ type: "text", text: "Work submitted. Payment challenge ready for Contractor." }] };
+
+      return { content: [{ type: "text", text: "Work submitted. Hub Judge is evaluating quality..." }] };
     }
 
     // ✅ FIX: initiate_exit handler — was completely missing
@@ -145,57 +167,57 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
     // 6. ✅ FIX: X402 — invoice.destination → invoice.recipient
     if (name === "pay_and_unlock") {
-  const taskId = toSymbol(args.taskId);
-  const res = await fetch(`${HUB}/api/tasks/${taskId}/download?addr=${myAddr}`);
-  if (res.status !== 402) return { content: [{ type: "text", text: "Task not in payment-ready state." }] };
+      const taskId = toSymbol(args.taskId);
+      const res = await fetch(`${HUB}/api/tasks/${taskId}/download?addr=${myAddr}`);
+      if (res.status !== 402) return { content: [{ type: "text", text: "Task not in payment-ready state." }] };
 
-  const invoice = await res.json();
-  const stroops = (invoice.invoice.amount * 10000000).toString();
-  const recipient = invoice.invoice.recipient;
+      const invoice = await res.json();
+      const stroops = (invoice.invoice.amount * 10000000).toString();
+      const recipient = invoice.invoice.recipient;
 
-  console.error(`[X402]: Paying ${invoice.invoice.amount} USDC to Hunter ${recipient}...`);
+      console.error(`[X402]: Paying ${invoice.invoice.amount} USDC to Hunter ${recipient}...`);
 
-  // ✅ FIX 1: capture stderr too — tx hash is in stderr not stdout
-  const payRes = spawnSync("stellar", [
-    "contract", "invoke",
-    "--id", USDC_SAC,
-    ...auth,
-    "--", "transfer",
-    "--from", myAddr,
-    "--to", recipient,
-    "--amount", stroops
-  ], { encoding: "utf-8" });
+      // ✅ FIX 1: capture stderr too — tx hash is in stderr not stdout
+      const payRes = spawnSync("stellar", [
+        "contract", "invoke",
+        "--id", USDC_SAC,
+        ...auth,
+        "--", "transfer",
+        "--from", myAddr,
+        "--to", recipient,
+        "--amount", stroops
+      ], { encoding: "utf-8" });
 
-  // ✅ FIX 2: search BOTH stdout and stderr, no quotes required
-  const combined = (payRes.stdout || "") + (payRes.stderr || "");
-  const txHash = combined.match(/([a-f0-9]{64})/i)?.[1];
+      // ✅ FIX 2: search BOTH stdout and stderr, no quotes required
+      const combined = (payRes.stdout || "") + (payRes.stderr || "");
+      const txHash = combined.match(/([a-f0-9]{64})/i)?.[1];
 
-  if (!txHash) {
-    console.error("[X402 DEBUG] stdout:", payRes.stdout);
-    console.error("[X402 DEBUG] stderr:", payRes.stderr);
-    throw new Error(`USDC Transfer failed — no tx hash found. stderr: ${payRes.stderr}`);
-  }
+      if (!txHash) {
+        console.error("[X402 DEBUG] stdout:", payRes.stdout);
+        console.error("[X402 DEBUG] stderr:", payRes.stderr);
+        throw new Error(`USDC Transfer failed — no tx hash found. stderr: ${payRes.stderr}`);
+      }
 
-  console.error(`[SETTLE]: Consuming hash ${txHash} on-chain...`);
-  spawnSync("stellar", [
-    "contract", "invoke",
-    "--id", CONTRACT_ID,
-    ...auth,
-    "--", "settle_task",
-    "--task_id", taskId,
-    "--contractor", myAddr,
-    "--tx_hash", txHash
-  ], { encoding: "utf-8" });
+      console.error(`[SETTLE]: Consuming hash ${txHash} on-chain...`);
+      spawnSync("stellar", [
+        "contract", "invoke",
+        "--id", CONTRACT_ID,
+        ...auth,
+        "--", "settle_task",
+        "--task_id", taskId,
+        "--contractor", myAddr,
+        "--tx_hash", txHash
+      ], { encoding: "utf-8" });
 
-  await syncHub('task_paid', { taskId, txHash });
+      await syncHub('task_paid', { taskId, txHash });
 
-  const finalRes = await fetch(`${HUB}/api/tasks/${taskId}/download?addr=${myAddr}`, {
-    headers: { 'x-stellar-tx': txHash }
-  });
-  const data = await finalRes.json();
+      const finalRes = await fetch(`${HUB}/api/tasks/${taskId}/download?addr=${myAddr}`, {
+        headers: { 'x-stellar-tx': txHash }
+      });
+      const data = await finalRes.json();
 
-  return { content: [{ type: "text", text: `SUCCESS! Reward Paid. Unlocked Work: ${data.payload}` }] };
-}
+      return { content: [{ type: "text", text: `SUCCESS! Reward Paid. Unlocked Work: ${data.payload}` }] };
+    }
 
   } catch (e) {
     console.error(e);
