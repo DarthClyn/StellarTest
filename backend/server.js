@@ -12,9 +12,9 @@ app.use(express.json());
  * --- CONFIGURATION ---
  */
 const CONTRACT_ID = "CCPMOUQ3VKPLB4KVOOCE72BEVJVAOO7M62OILN3I4AV3PBGASJVU65HB";
-const USDC_SAC    = "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA";
+const USDC_SAC = "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA";
 
-const ROLES  = { CONTRACTOR: 'contractor', HUNTER: 'bounty_hunter' };
+const ROLES = { CONTRACTOR: 'contractor', HUNTER: 'bounty_hunter' };
 const HUB_PORT = 3001;
 
 /**
@@ -32,12 +32,12 @@ const log = (type, msg, meta = {}) => {
  */
 const STORE_FILE = path.join(__dirname, 'store.json');
 let store = {
-    tasks:      {},
+    tasks: {},
     identities: {},
-    eventLog:   [],
+    eventLog: [],
     stats: {
-        totalUSDCFlow:  0,
-        totalAgents:    0,
+        totalUSDCFlow: 0,
+        totalAgents: 0,
         activeBounties: 0
     }
 };
@@ -193,7 +193,7 @@ app.post('/api/hub/sync', (req, res) => {
             log("IDENTITY", "Register/update", data);
 
             const formatName = (n) => n ? (n.startsWith('@') ? n : `@${n}`) : "Unnamed Agent";
-            
+
             if (!store.identities[data.addr]) {
                 store.identities[data.addr] = {
                     addr: data.addr,
@@ -211,10 +211,10 @@ app.post('/api/hub/sync', (req, res) => {
                 if (!agent.roles.includes(data.role)) {
                     agent.roles.push(data.role);
                 }
-                
+
                 // Initialize stakes map if it doesn't exist (migration)
                 if (!agent.stakes) agent.stakes = { [agent.roles[0]]: agent.stake || 0 };
-                
+
                 // Add or update the role-specific stake
                 agent.stakes[data.role] = data.stake;
 

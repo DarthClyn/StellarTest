@@ -3,11 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { motion as m, AnimatePresence } from "framer-motion";
 import { useWallet } from "../context/WalletContext";
 import { ButtonMode } from "@creit-tech/stellar-wallets-kit/components";
-import { 
-  Activity, 
-  CreditCard, 
-  CheckCircle2, 
-  Cpu, 
+import {
+  Activity,
+  CreditCard,
+  CheckCircle2,
+  Cpu,
   ExternalLink,
   ArrowUpRight,
   Rocket,
@@ -33,7 +33,7 @@ export default function Dashboard() {
   const handleManualSync = (e: React.FormEvent) => {
     e.preventDefault();
     if (agentAddress.trim()) {
-        setActiveAddress(agentAddress.trim());
+      setActiveAddress(agentAddress.trim());
     }
   };
 
@@ -66,14 +66,14 @@ export default function Dashboard() {
         fetch(`http://localhost:3001/api/agents/${activeAddress}`)
           .then(res => res.json())
           .then(data => {
-              setAgentData(data.identity);
-              setTasks(data.history || []);
-              
-              // Only default role mode if it hasn't been set yet
-              if (data.identity?.roles?.length > 0 && !roleMode) {
-                  if (data.identity.roles.includes("contractor")) setRoleMode("contractor");
-                  else setRoleMode("bounty_hunter");
-              }
+            setAgentData(data.identity);
+            setTasks(data.history || []);
+
+            // Only default role mode if it hasn't been set yet
+            if (data.identity?.roles?.length > 0 && !roleMode) {
+              if (data.identity.roles.includes("contractor")) setRoleMode("contractor");
+              else setRoleMode("bounty_hunter");
+            }
           })
           .catch(console.error);
       }
@@ -86,7 +86,7 @@ export default function Dashboard() {
 
   // Logic for filtered data
   const isContractor = roleMode === "contractor";
-  
+
   const filteredTasks = tasks.filter(t => {
     if (!activeAddress) return true; // Show all in global view
     if (isContractor) return t.contractorAddr === activeAddress;
@@ -102,11 +102,11 @@ export default function Dashboard() {
       ];
     }
 
-    const stakeTrend = agentData?.stakes ? 
-        Object.entries(agentData.stakes)
-          .map(([role, amt]) => `${Number(amt)/10000000}${role === "contractor" ? "C" : "H"}`)
-          .join(" + ") : 
-        "Secured";
+    const stakeTrend = agentData?.stakes ?
+      Object.entries(agentData.stakes)
+        .map(([role, amt]) => `${Number(amt) / 10000000}${role === "contractor" ? "C" : "H"}`)
+        .join(" + ") :
+      "Secured";
 
     if (isContractor) {
       const totalPaid = tasks.filter(t => t.contractorAddr === activeAddress && t.status === "paid").reduce((acc, t) => acc + t.reward, 0);
@@ -129,8 +129,8 @@ export default function Dashboard() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black">
         <div className="bg-mesh opacity-20" />
-        <m.div 
-          animate={{ rotate: 360, scale: [1, 1.1, 1] }} 
+        <m.div
+          animate={{ rotate: 360, scale: [1, 1.1, 1] }}
           transition={{ repeat: Infinity, duration: 2 }}
           className="relative z-10"
         >
@@ -145,7 +145,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen pt-20 pb-32">
       <div className="bg-mesh" />
-      
+
       <div className="max-w-6xl mx-auto px-4 relative z-10">
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-8">
           <div>
@@ -153,7 +153,7 @@ export default function Dashboard() {
               <div className="p-2 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
                 <Cpu className="w-6 h-6" />
               </div>
-            <h1 className="text-4xl font-black tracking-tight">{activeAddress ? (agentData?.name || (isContractor ? "Contractor Hub" : "Hunter Terminal")) : "Global Network"}</h1>
+              <h1 className="text-4xl font-black tracking-tight">{activeAddress ? (agentData?.name || (isContractor ? "Contractor Hub" : "Hunter Terminal")) : "Global Network"}</h1>
             </div>
             <p className="text-white/40 font-medium tracking-wide">
               {activeAddress ? (
@@ -177,53 +177,53 @@ export default function Dashboard() {
 
           <div className="flex flex-col gap-4 w-full md:w-auto items-end">
             <div className="flex flex-wrap gap-3 justify-end">
-            <form onSubmit={handleManualSync} className="flex gap-2">
-              <div className="relative flex-1 md:w-80">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
-                <input 
-                  type="text" 
-                  placeholder="Sync Wallet Address..."
-                  value={agentAddress}
-                  onChange={(e) => setAgentAddress(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-indigo-500/50 transition-all font-mono"
-                />
-              </div>
-              {agentAddress.trim() && (
-                <button type="submit" className="px-6 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-sm font-bold flex items-center gap-2">
-                  <Activity className="w-4 h-4 text-indigo-400" />
-                  Sync
-                </button>
-              )}
-            </form>
+              <form onSubmit={handleManualSync} className="flex gap-2">
+                <div className="relative flex-1 md:w-80">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
+                  <input
+                    type="text"
+                    placeholder="Sync Wallet Address..."
+                    value={agentAddress}
+                    onChange={(e) => setAgentAddress(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-white/20 focus:outline-none focus:border-indigo-500/50 transition-all font-mono"
+                  />
+                </div>
+                {agentAddress.trim() && (
+                  <button type="submit" className="px-6 py-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-sm font-bold flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-indigo-400" />
+                    Sync
+                  </button>
+                )}
+              </form>
 
             </div>
-            
+
             {agentData && agentData.roles?.length > 1 && (
-               <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 shadow-2xl backdrop-blur-md">
-                <button 
+              <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 shadow-2xl backdrop-blur-md">
+                <button
                   onClick={() => { setRoleMode("contractor"); setTaskFilter("all"); }}
                   className={`px-5 py-2 rounded-lg text-xs font-black transition-all ${roleMode === "contractor" ? "bg-indigo-600 text-white shadow-[0_0_20px_rgba(79,70,229,0.4)]" : "text-white/40 hover:text-white/60 hover:bg-white/5"}`}
                 >
                   CONTRACTOR
                 </button>
-                <button 
+                <button
                   onClick={() => { setRoleMode("bounty_hunter"); setTaskFilter("all"); }}
                   className={`px-5 py-2 rounded-lg text-xs font-black transition-all ${roleMode === "bounty_hunter" ? "bg-indigo-600 text-white shadow-[0_0_20px_rgba(79,70,229,0.4)]" : "text-white/40 hover:text-white/60 hover:bg-white/5"}`}
                 >
                   HUNTER
                 </button>
-               </div>
+              </div>
             )}
           </div>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           {statCards.map((stat, i) => (
-            <m.div 
+            <m.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.1 }}
-              key={stat.label} 
+              key={stat.label}
               className="glass-card p-8 rounded-3xl group hover:border-white/20 transition-all overflow-hidden relative"
             >
               <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 blur-3xl rounded-full -mr-16 -mt-16 group-hover:bg-indigo-500/10 transition-all" />
@@ -250,61 +250,61 @@ export default function Dashboard() {
               </h2>
               {activeAddress && (
                 <div className="flex gap-4">
-                    {["all", isContractor ? "open" : "applied", "allotted", "submitted", "paid"].map(status => (
-                        <button 
-                            key={status}
-                            onClick={() => setTaskFilter(status)}
-                            className={`text-[10px] font-black uppercase tracking-widest transition-all ${taskFilter === status ? "text-indigo-400 border-b-2 border-indigo-400" : "text-white/20 hover:text-white/40"}`}
-                        >
-                            {status === 'allotted' ? 'Accepted' : (status === 'paid' ? 'Completed' : status)}
-                        </button>
-                    ))}
+                  {["all", isContractor ? "open" : "applied", "allotted", "submitted", "paid"].map(status => (
+                    <button
+                      key={status}
+                      onClick={() => setTaskFilter(status)}
+                      className={`text-[10px] font-black uppercase tracking-widest transition-all ${taskFilter === status ? "text-indigo-400 border-b-2 border-indigo-400" : "text-white/20 hover:text-white/40"}`}
+                    >
+                      {status === 'allotted' ? 'Accepted' : (status === 'paid' ? 'Completed' : status)}
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
-            
+
             <div className="space-y-4">
               {filteredTasks.filter(t => taskFilter === "all" || t.status === taskFilter || (taskFilter === "applied" && t.status === "open")).length > 0 ? (
                 filteredTasks
                   .filter(t => taskFilter === "all" || t.status === taskFilter || (taskFilter === "applied" && t.status === "open"))
                   .map((task, i) => (
-                <m.div 
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.3 + (i * 0.05) }}
-                  key={task.taskId} 
-                  className="glass-card p-6 rounded-2xl flex items-center justify-between hover:bg-white/10 transition-all border-white/5 group"
-                >
-                  <div className="flex items-center gap-5">
-                    <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:bg-indigo-500/10 group-hover:border-indigo-500/20 transition-all">
-                      <Rocket className={`w-6 h-6 ${task.status === 'paid' ? 'text-green-400' : 'text-indigo-400'}`} />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-white text-lg mb-1">{task.title}</h4>
-                      <div className="flex items-center gap-4 text-[10px] font-bold text-white/30 uppercase tracking-widest">
-                        <span>ID: {task.taskId}</span>
-                        <span className="flex items-center gap-1.5 border-l border-white/10 pl-4 capitalize tracking-normal text-white/50">
-                            <Clock className="w-3 h-3" />
-                            {task.status === "open" && !isContractor && task.applicants?.includes(activeAddress) ? "applied" : task.status}
-                        </span>
+                    <m.div
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.3 + (i * 0.05) }}
+                      key={task.taskId}
+                      className="glass-card p-6 rounded-2xl flex items-center justify-between hover:bg-white/10 transition-all border-white/5 group"
+                    >
+                      <div className="flex items-center gap-5">
+                        <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center border border-white/10 group-hover:bg-indigo-500/10 group-hover:border-indigo-500/20 transition-all">
+                          <Rocket className={`w-6 h-6 ${task.status === 'paid' ? 'text-green-400' : 'text-indigo-400'}`} />
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-white text-lg mb-1">{task.title}</h4>
+                          <div className="flex items-center gap-4 text-[10px] font-bold text-white/30 uppercase tracking-widest">
+                            <span>ID: {task.taskId}</span>
+                            <span className="flex items-center gap-1.5 border-l border-white/10 pl-4 capitalize tracking-normal text-white/50">
+                              <Clock className="w-3 h-3" />
+                              {task.status === "open" && !isContractor && task.applicants?.includes(activeAddress) ? "applied" : task.status}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-8">
-                    <div className="text-right">
-                      <p className="text-[10px] font-black text-white/20 uppercase mb-1 tracking-widest">Entitlement</p>
-                      <p className="text-xl font-black text-green-400 tracking-tighter">{task.reward} <span className="text-xs opacity-50">USDC</span></p>
-                    </div>
-                    <button className="p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-indigo-500/20 hover:text-indigo-400 hover:border-indigo-500/30 transition-all">
-                      <ExternalLink className="w-5 h-5" />
-                    </button>
-                  </div>
-                </m.div>
-              )) ): (
+                      <div className="flex items-center gap-8">
+                        <div className="text-right">
+                          <p className="text-[10px] font-black text-white/20 uppercase mb-1 tracking-widest">Entitlement</p>
+                          <p className="text-xl font-black text-green-400 tracking-tighter">{task.reward} <span className="text-xs opacity-50">USDC</span></p>
+                        </div>
+                        <button className="p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-indigo-500/20 hover:text-indigo-400 hover:border-indigo-500/30 transition-all">
+                          <ExternalLink className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </m.div>
+                  ))) : (
                 <div className="glass-card p-12 rounded-3xl border-dashed border-white/10 flex flex-col items-center justify-center text-center opacity-40">
-                    <Layers className="w-12 h-12 mb-4" />
-                    <p className="font-bold">No Records Found</p>
-                    <p className="text-xs">Establish new parameters or sync a different wallet.</p>
+                  <Layers className="w-12 h-12 mb-4" />
+                  <p className="font-bold">No Records Found</p>
+                  <p className="text-xs">Establish new parameters or sync a different wallet.</p>
                 </div>
               )}
             </div>
@@ -322,7 +322,7 @@ export default function Dashboard() {
                 <button key={action.label} className="w-full flex items-center justify-between p-4 rounded-xl bg-white/5 hover:bg-indigo-600/20 hover:text-indigo-400 transition-all group font-bold text-sm">
                   <div className="flex items-center gap-3">
                     <div className="p-1.5 rounded-lg bg-white/5 group-hover:bg-indigo-500/20 transition-all">
-                        {action.icon}
+                      {action.icon}
                     </div>
                     {action.label}
                   </div>
@@ -332,7 +332,7 @@ export default function Dashboard() {
             </div>
 
             <div className="glass-card p-8 rounded-3xl bg-gradient-to-br from-indigo-600/20 to-purple-600/20 border-indigo-500/20 relative overflow-hidden group">
-               <div className="absolute -bottom-8 -right-8 w-32 h-32 bg-white/5 rounded-full blur-2xl group-hover:bg-white/10 transition-all" />
+              <div className="absolute -bottom-8 -right-8 w-32 h-32 bg-white/5 rounded-full blur-2xl group-hover:bg-white/10 transition-all" />
               <h4 className="font-black text-xl mb-3 relative z-10">Bazar Intelligence</h4>
               <p className="text-sm text-white/50 mb-6 relative z-10 leading-relaxed">Access decentralized computation protocols and manage agent identity seamlessly.</p>
               <button className="text-indigo-400 font-black text-xs hover:underline uppercase tracking-widest relative z-10">
