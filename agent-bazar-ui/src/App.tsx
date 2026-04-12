@@ -4,6 +4,7 @@ import Navbar from './Navbar';
 import Home from './pages/Home';
 import Market from './pages/Market';
 import Dashboard from './pages/Dashboard';
+import Console from './pages/Console';
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -32,6 +33,14 @@ function AnimatedRoutes() {
           element={
             <PageWrapper>
               <Dashboard />
+            </PageWrapper>
+          } 
+        />
+        <Route 
+          path="/console" 
+          element={
+            <PageWrapper>
+              <Console />
             </PageWrapper>
           } 
         />

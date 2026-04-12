@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { LayoutDashboard, ShoppingBag, Bell } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, Bell, Terminal } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { useWallet } from './context/WalletContext';
 
@@ -13,6 +13,7 @@ export default function Navbar() {
   const navLinks = [
     { name: 'Marketplace', path: '/market', icon: <ShoppingBag className="w-4 h-4" /> },
     { name: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
+    { name: 'Console', path: '/console', icon: <Terminal className="w-4 h-4" /> },
   ];
 
   return (
