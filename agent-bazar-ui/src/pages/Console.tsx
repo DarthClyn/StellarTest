@@ -12,10 +12,16 @@ export default function Console() {
   const [tasks, setTasks] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch('http://localhost:3001/api/dashboard/tasks')
-      .then(res => res.json())
-      .then(data => setTasks(data || []))
-      .catch(console.error);
+    const fetchTasks = () => {
+      fetch('http://localhost:3001/api/dashboard/tasks')
+        .then(res => res.json())
+        .then(data => setTasks(data || []))
+        .catch(console.error);
+    };
+
+    fetchTasks();
+    const interval = setInterval(fetchTasks, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   const paidTasks = tasks.filter(t => t.status === "paid");

@@ -27,6 +27,9 @@ const log = (type, msg, meta = {}) => {
 /**
  * --- STATE ENGINE ---
  */
+/**
+ * --- STATE ENGINE & PERSISTENCE ---
+ */
 const STORE_FILE = path.join(__dirname, 'store.json');
 let store = {
     tasks:      {},
@@ -39,23 +42,25 @@ let store = {
     }
 };
 
-if (fs.existsSync(STORE_FILE)) {
-    try {
-        const raw = fs.readFileSync(STORE_FILE, 'utf8');
-        store = JSON.parse(raw);
-        log("BOOT", "Loaded persistent store from store.json");
-    } catch (e) {
-        log("BOOT_ERROR", "Failed to parse store.json. Starting fresh.");
-    }
-}
-
 const saveStore = () => {
     try {
         fs.writeFileSync(STORE_FILE, JSON.stringify(store, null, 2), 'utf8');
     } catch (e) {
-        log("SAVE_ERROR", "Could not persist store to disk");
+        log("SAVE_ERROR", "Could not persist store to disk", e);
     }
 };
+
+// Initial Load
+if (fs.existsSync(STORE_FILE)) {
+    try {
+        const raw = fs.readFileSync(STORE_FILE, 'utf8');
+        const parsed = JSON.parse(raw);
+        store = { ...store, ...parsed };
+        log("BOOT", "Loaded persistent store from store.json");
+    } catch (e) {
+        log("BOOT_ERROR", "Failed to parse store.json. Starting fresh.", e);
+    }
+}
 
 /**
  * --- JSON HEADER ---
@@ -187,10 +192,15 @@ app.post('/api/hub/sync', (req, res) => {
         case 'reg':
             log("IDENTITY", "Register/update", data);
 
+            const formatName = (n) => n ? (n.startsWith('@') ? n : `@${n}`) : "Unnamed Agent";
+            
             if (!store.identities[data.addr]) {
                 store.identities[data.addr] = {
                     addr: data.addr,
+                    name: formatName(data.name),
                     roles: [data.role],
+                    capabilities: data.capabilities || [],
+                    stakes: { [data.role]: data.stake },
                     stake: data.stake,
                     stake_xlm: data.stake / 10_000_000,
                     registered: true
@@ -201,9 +211,20 @@ app.post('/api/hub/sync', (req, res) => {
                 if (!agent.roles.includes(data.role)) {
                     agent.roles.push(data.role);
                 }
-                // Always sync/update the latest stake value sent by the MCP
-                agent.stake = data.stake;
-                agent.stake_xlm = data.stake / 10_000_000;
+                
+                // Initialize stakes map if it doesn't exist (migration)
+                if (!agent.stakes) agent.stakes = { [agent.roles[0]]: agent.stake || 0 };
+                
+                // Add or update the role-specific stake
+                agent.stakes[data.role] = data.stake;
+
+                // Update total aggregate stake
+                agent.stake = Object.values(agent.stakes).reduce((acc, s) => acc + s, 0);
+                agent.stake_xlm = agent.stake / 10_000_000;
+
+                // Update off-chain metadata if provided
+                if (data.name) agent.name = formatName(data.name);
+                if (data.capabilities) agent.capabilities = data.capabilities;
                 agent.registered = true;
             }
             break;

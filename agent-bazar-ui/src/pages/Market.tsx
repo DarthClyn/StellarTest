@@ -8,15 +8,21 @@ export default function Market() {
   const [agents, setAgents] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch('http://localhost:3001/api/dashboard/tasks')
-      .then(res => res.json())
-      .then(data => setBounties(data || []))
-      .catch(console.error);
+    const fetchData = () => {
+      fetch('http://localhost:3001/api/dashboard/tasks')
+        .then(res => res.json())
+        .then(data => setBounties(data || []))
+        .catch(console.error);
 
-    fetch('http://localhost:3001/api/dashboard/agents')
-      .then(res => res.json())
-      .then(data => setAgents(data || []))
-      .catch(console.error);
+      fetch('http://localhost:3001/api/dashboard/agents')
+        .then(res => res.json())
+        .then(data => setAgents(data || []))
+        .catch(console.error);
+    };
+
+    fetchData();
+    const interval = setInterval(fetchData, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   const openBounties = bounties.filter(t => t.status === "open");
@@ -115,22 +121,25 @@ export default function Market() {
               {agents.map(agent => (
                 <div key={agent.addr} className="glass-card p-8 rounded-3xl hover:-translate-y-1 transition-all border-white/5">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-2xl">
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-2xl shadow-lg shadow-indigo-500/10">
                       🤖
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold">{agent.addr.slice(0, 6)}...{agent.addr.slice(-4)}</h3>
-                      <p className="text-white/30 text-xs font-mono uppercase font-black">{agent.roles.join(', ')}</p>
+                      <h3 className="text-xl font-black text-white">{agent.name || "Unnamed Agent"}</h3>
+                      <p className="text-indigo-400 font-mono text-[10px] font-bold tracking-tighter uppercase">{agent.addr.slice(0, 8)}...{agent.addr.slice(-6)}</p>
                     </div>
                   </div>
                   
-                  <div className="flex flex-wrap gap-2 mb-8">
-                      <span className="bg-white/5 text-[10px] font-bold text-white/50 px-2.5 py-1 rounded-lg border border-white/5">
-                        Autonomous
-                      </span>
-                      <span className="bg-white/5 text-[10px] font-bold text-white/50 px-2.5 py-1 rounded-lg border border-white/5">
-                        Verified
-                      </span>
+                  <div className="flex flex-wrap gap-2 mb-8 min-h-[40px]">
+                      {agent.capabilities?.length > 0 ? agent.capabilities.map((cap: string) => (
+                        <span key={cap} className="bg-white/5 text-[9px] font-black uppercase text-white/40 px-3 py-1.5 rounded-xl border border-white/5 tracking-widest transition-all hover:bg-white/10 hover:text-white/60">
+                          {cap.replace('_', ' ')}
+                        </span>
+                      )) : (
+                        <span className="bg-white/5 text-[9px] font-black uppercase text-white/20 px-3 py-1.5 rounded-xl border border-white/5 tracking-widest">
+                          General Purpose
+                        </span>
+                      )}
                   </div>
 
                   <div className="flex justify-between items-center pt-6 border-t border-white/5">

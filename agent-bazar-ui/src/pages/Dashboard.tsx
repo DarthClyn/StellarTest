@@ -43,31 +43,38 @@ export default function Dashboard() {
   }, [connectedAddress]);
 
   useEffect(() => {
-    if (!activeAddress) {
-      fetch('http://localhost:3001/api/dashboard/stats')
-        .then(res => res.json())
-        .then(data => setStatsData(data || { totalAgents: 0, totalUSDCFlow: 0, activeBounties: 0 }))
-        .catch(console.error);
+    const refreshData = () => {
+      if (!activeAddress) {
+        fetch('http://localhost:3001/api/dashboard/stats')
+          .then(res => res.json())
+          .then(data => setStatsData(data || { totalAgents: 0, totalUSDCFlow: 0, activeBounties: 0 }))
+          .catch(console.error);
 
-      fetch('http://localhost:3001/api/dashboard/tasks')
-        .then(res => res.json())
-        .then(data => setTasks(data || []))
-        .catch(console.error);
-    } else {
-      fetch(`http://localhost:3001/api/agents/${activeAddress}`)
-        .then(res => res.json())
-        .then(data => {
-            setAgentData(data.identity);
-            setTasks(data.history || []);
-            // Default role mode to the first available role
-            if (data.identity?.roles?.length > 0) {
-                if (data.identity.roles.includes("contractor")) setRoleMode("contractor");
-                else setRoleMode("bounty_hunter");
-            }
-        })
-        .catch(console.error);
-    }
-  }, [activeAddress]);
+        fetch('http://localhost:3001/api/dashboard/tasks')
+          .then(res => res.json())
+          .then(data => setTasks(data || []))
+          .catch(console.error);
+      } else {
+        fetch(`http://localhost:3001/api/agents/${activeAddress}`)
+          .then(res => res.json())
+          .then(data => {
+              setAgentData(data.identity);
+              setTasks(data.history || []);
+              
+              // Only default role mode if it hasn't been set yet
+              if (data.identity?.roles?.length > 0 && !roleMode) {
+                  if (data.identity.roles.includes("contractor")) setRoleMode("contractor");
+                  else setRoleMode("bounty_hunter");
+              }
+          })
+          .catch(console.error);
+      }
+    };
+
+    refreshData();
+    const interval = setInterval(refreshData, 5000);
+    return () => clearInterval(interval);
+  }, [activeAddress, roleMode]);
 
   // Logic for filtered data
   const isContractor = roleMode === "contractor";
@@ -86,19 +93,24 @@ export default function Dashboard() {
         { label: "Live Bounties", value: statsData.activeBounties, icon: <Rocket className="w-5 h-5 text-purple-400" />, trend: "Available" },
       ];
     }
-    // ... continues ...
+
+    const stakeTrend = agentData?.stakes ? 
+        Object.entries(agentData.stakes)
+          .map(([role, amt]) => `${Number(amt)/10000000}${role === "contractor" ? "C" : "H"}`)
+          .join(" + ") : 
+        "Secured";
 
     if (isContractor) {
       const totalPaid = tasks.filter(t => t.contractorAddr === activeAddress && t.status === "paid").reduce((acc, t) => acc + t.reward, 0);
       return [
-        { label: "Staked Balance", value: `${(agentData.stake / 10000000) || 0} XLM`, icon: <Wallet className="w-5 h-5 text-indigo-400" />, trend: "Secured" },
+        { label: "Staked Balance", value: `${(agentData.stake / 10000000) || 0} XLM`, icon: <Wallet className="w-5 h-5 text-indigo-400" />, trend: stakeTrend },
         { label: "Bounties Posted", value: tasks.filter(t => t.contractorAddr === activeAddress).length, icon: <Briefcase className="w-5 h-5 text-blue-400" />, trend: "Deployments" },
         { label: "Total Payments", value: `${totalPaid.toFixed(2)} USDC`, icon: <CreditCard className="w-5 h-5 text-green-400" />, trend: "Paid Out" },
       ];
     } else {
       const earnings = tasks.filter(t => t.bountyHunterAddr === activeAddress && t.status === "paid").reduce((acc, t) => acc + t.reward, 0);
       return [
-        { label: "Staked Balance", value: `${(agentData.stake / 10000000) || 0} XLM`, icon: <Wallet className="w-5 h-5 text-indigo-400" />, trend: "Secured" },
+        { label: "Staked Balance", value: `${(agentData.stake / 10000000) || 0} XLM`, icon: <Wallet className="w-5 h-5 text-indigo-400" />, trend: stakeTrend },
         { label: "Active Jobs", value: tasks.filter(t => (t.bountyHunterAddr === activeAddress || t.applicants?.includes(activeAddress)) && t.status !== "paid").length, icon: <Zap className="w-5 h-5 text-yellow-400" />, trend: "In Progress" },
         { label: "Total Earnings", value: `${earnings.toFixed(2)} USDC`, icon: <CreditCard className="w-5 h-5 text-green-400" />, trend: "Income" },
       ];
@@ -118,12 +130,30 @@ export default function Dashboard() {
               <div className="p-2 rounded-xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">
                 <Cpu className="w-6 h-6" />
               </div>
-              <h1 className="text-4xl font-black tracking-tight">{activeAddress ? (isContractor ? "Contractor Hub" : "Hunter Terminal") : "Global Network"}</h1>
+            <h1 className="text-4xl font-black tracking-tight">{activeAddress ? (agentData?.name || (isContractor ? "Contractor Hub" : "Hunter Terminal")) : "Global Network"}</h1>
             </div>
-            <p className="text-white/40 font-medium">Monitoring <span className="text-indigo-400">{activeAddress ? `${activeAddress.slice(0, 10)}...${activeAddress.slice(-8)}` : "Aggregated System Flow"}</span></p>
+            <p className="text-white/40 font-medium tracking-wide">
+              {activeAddress ? (
+                <>
+                  Operational Interface for <span className="text-indigo-400">{activeAddress.slice(0, 8)}...{activeAddress.slice(-6)}</span>
+                </>
+              ) : (
+                "Aggregated System Flow"
+              )}
+            </p>
+            {agentData?.capabilities?.length > 0 && (
+              <div className="flex gap-2 mt-4">
+                {agentData.capabilities.map((cap: string) => (
+                  <span key={cap} className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-[10px] font-black uppercase text-white/40 tracking-widest">
+                    {cap.replace('_', ' ')}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
-          <div className="flex flex-col md:flex-end gap-4 w-full md:w-auto">
+          <div className="flex flex-col gap-4 w-full md:w-auto items-end">
+            <div className="flex flex-wrap gap-3 justify-end">
             <form onSubmit={handleManualSync} className="flex gap-2">
               <div className="relative flex-1 md:w-80">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
@@ -143,17 +173,19 @@ export default function Dashboard() {
               )}
             </form>
 
+            </div>
+            
             {agentData && agentData.roles?.length > 1 && (
-               <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 self-end">
+               <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 shadow-2xl backdrop-blur-md">
                 <button 
                   onClick={() => { setRoleMode("contractor"); setTaskFilter("all"); }}
-                  className={`px-4 py-1.5 rounded-lg text-xs font-black transition-all ${roleMode === "contractor" ? "bg-indigo-600 text-white shadow-lg" : "text-white/40 hover:text-white/60"}`}
+                  className={`px-5 py-2 rounded-lg text-xs font-black transition-all ${roleMode === "contractor" ? "bg-indigo-600 text-white shadow-[0_0_20px_rgba(79,70,229,0.4)]" : "text-white/40 hover:text-white/60 hover:bg-white/5"}`}
                 >
                   CONTRACTOR
                 </button>
                 <button 
                   onClick={() => { setRoleMode("bounty_hunter"); setTaskFilter("all"); }}
-                  className={`px-4 py-1.5 rounded-lg text-xs font-black transition-all ${roleMode === "bounty_hunter" ? "bg-indigo-600 text-white shadow-lg" : "text-white/40 hover:text-white/60"}`}
+                  className={`px-5 py-2 rounded-lg text-xs font-black transition-all ${roleMode === "bounty_hunter" ? "bg-indigo-600 text-white shadow-[0_0_20px_rgba(79,70,229,0.4)]" : "text-white/40 hover:text-white/60 hover:bg-white/5"}`}
                 >
                   HUNTER
                 </button>

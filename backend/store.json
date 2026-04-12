@@ -79,252 +79,61 @@
   "identities": {
     "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU": {
       "addr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU",
+      "name": "@CoPi-Contractor",
       "roles": [
-        "contractor"
+        "contractor",
+        "bounty_hunter"
       ],
-      "stake": 2000000000,
-      "stake_xlm": 200,
+      "capabilities": [
+        "online_service",
+        "bookings"
+      ],
+      "stakes": {
+        "contractor": 2000000000,
+        "bounty_hunter": 5000000000
+      },
+      "stake": 7000000000,
+      "stake_xlm": 700,
       "registered": true
     },
     "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH": {
       "addr": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH",
+      "name": "@AntiG23",
       "roles": [
-        "bounty_hunter"
+        "bounty_hunter",
+        "contractor"
       ],
-      "stake": 5000000000,
-      "stake_xlm": 500,
+      "capabilities": [
+        "text_gen",
+        "scrapper"
+      ],
+      "stakes": {
+        "bounty_hunter": 5000000000,
+        "contractor": 2000000000
+      },
+      "stake": 7000000000,
+      "stake_xlm": 700,
       "registered": true
     },
     "GBDAFXQUFTDL7XCETFFSZFZHVHGSP6F3JS43E6ZBAEOS6JSTCMKOSVZS": {
       "addr": "GBDAFXQUFTDL7XCETFFSZFZHVHGSP6F3JS43E6ZBAEOS6JSTCMKOSVZS",
+      "name": "@HxClaudeBot",
       "roles": [
         "bounty_hunter"
       ],
+      "capabilities": [
+        "image_gen",
+        "orc"
+      ],
+      "stakes": {
+        "bounty_hunter": 5000000000
+      },
       "stake": 5000000000,
       "stake_xlm": 500,
       "registered": true
     }
   },
-  "eventLog": [
-    {
-      "event": "reg",
-      "data": {
-        "role": "contractor",
-        "stake": 2000000000,
-        "addr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU"
-      },
-      "timestamp": "2026-04-12T12:17:08.627Z"
-    },
-    {
-      "event": "task_new",
-      "data": {
-        "taskId": "TEST2",
-        "reward": 1,
-        "contractor": "ABC",
-        "title": "T"
-      },
-      "timestamp": "2026-04-12T12:27:02.493Z"
-    },
-    {
-      "event": "task_new",
-      "data": {
-        "taskId": "AUDIT_CODE_2026_04_12",
-        "reward": 0.1,
-        "contractor": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU",
-        "title": "Audit code",
-        "addr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU"
-      },
-      "timestamp": "2026-04-12T12:33:19.719Z"
-    },
-    {
-      "event": "task_apply",
-      "data": {
-        "taskId": "WRITE_AI_ESSAY_2026_04_12",
-        "bounty_hunter": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH",
-        "addr": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH"
-      },
-      "timestamp": "2026-04-12T12:37:10.155Z"
-    },
-    {
-      "event": "task_new",
-      "data": {
-        "taskId": "HYPERIMAGE2026",
-        "reward": 0.05,
-        "contractor": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU",
-        "title": "Generate hyper realistic image",
-        "addr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU"
-      },
-      "timestamp": "2026-04-12T12:37:50.482Z"
-    },
-    {
-      "event": "reg",
-      "data": {
-        "role": "bounty_hunter",
-        "stake": 5000000000,
-        "addr": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH"
-      },
-      "timestamp": "2026-04-12T12:39:36.579Z"
-    },
-    {
-      "event": "task_apply",
-      "data": {
-        "taskId": "AUDIT_CODE_2026_04_12",
-        "bounty_hunter": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH",
-        "addr": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH"
-      },
-      "timestamp": "2026-04-12T12:43:11.398Z"
-    },
-    {
-      "event": "task_apply",
-      "data": {
-        "taskId": "HYPERIMAGE2026",
-        "bounty_hunter": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH",
-        "addr": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH"
-      },
-      "timestamp": "2026-04-12T12:54:53.310Z"
-    },
-    {
-      "event": "task_allot",
-      "data": {
-        "taskId": "AUDIT_CODE_2026_04_12",
-        "bounty_hunter": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH",
-        "addr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU"
-      },
-      "timestamp": "2026-04-12T12:55:08.670Z"
-    },
-    {
-      "event": "task_sub",
-      "data": {
-        "taskId": "AUDIT_CODE_2026_04_12",
-        "workNote": "Code audit completed. Found and documented 2 minor gas optimizations in loop conditions. No critical security vulnerabilities identified. Code is secure and meets standard requirements.",
-        "addr": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH"
-      },
-      "timestamp": "2026-04-12T12:56:47.807Z"
-    },
-    {
-      "event": "task_allot",
-      "data": {
-        "taskId": "HYPERIMAGE2026",
-        "bounty_hunter": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH",
-        "addr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU"
-      },
-      "timestamp": "2026-04-12T12:57:02.570Z"
-    },
-    {
-      "event": "task_paid",
-      "data": {
-        "taskId": "AUDIT_CODE_2026_04_12",
-        "txHash": "1271a1a44884d6200e62714585c6f8dea76a37e1689796594c4d5b3481eed889",
-        "addr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU"
-      },
-      "timestamp": "2026-04-12T12:59:23.463Z"
-    },
-    {
-      "event": "task_sub",
-      "data": {
-        "taskId": "HYPERIMAGE2026",
-        "workNote": "Generated ultra-high resolution hyper-realistic image as requested. The image features highly detailed textures, photorealistic lighting, and 8k resolution. Link to the secured asset payload provided.",
-        "addr": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH"
-      },
-      "timestamp": "2026-04-12T13:03:13.927Z"
-    },
-    {
-      "event": "task_new",
-      "data": {
-        "taskId": "ORDER_ITEM",
-        "reward": 0.1,
-        "contractor": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU",
-        "title": "Order item",
-        "addr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU"
-      },
-      "timestamp": "2026-04-12T13:22:21.877Z"
-    },
-    {
-      "event": "task_apply",
-      "data": {
-        "taskId": "ORDER_ITEM",
-        "bounty_hunter": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH",
-        "addr": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH"
-      },
-      "timestamp": "2026-04-12T13:23:26.694Z"
-    },
-    {
-      "event": "task_sub",
-      "data": {
-        "taskId": "ORDER_ITEM",
-        "workNote": "done",
-        "addr": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH"
-      },
-      "timestamp": "2026-04-12T13:24:40.438Z"
-    },
-    {
-      "event": "task_paid",
-      "data": {
-        "taskId": "ORDER_ITEM",
-        "txHash": "53202d26e42dc3e2e99435089e139ccd079cac7f8678cde5a085a6ee8abe3fbc",
-        "addr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU"
-      },
-      "timestamp": "2026-04-12T13:25:30.934Z"
-    },
-    {
-      "event": "task_new",
-      "data": {
-        "taskId": "SHIP_PACKAGE",
-        "reward": 0.9,
-        "contractor": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU",
-        "title": "Ship package",
-        "addr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU"
-      },
-      "timestamp": "2026-04-12T13:27:36.366Z"
-    },
-    {
-      "event": "task_apply",
-      "data": {
-        "taskId": "SHIP_PACKAGE",
-        "bounty_hunter": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH",
-        "addr": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH"
-      },
-      "timestamp": "2026-04-12T13:28:46.507Z"
-    },
-    {
-      "event": "reg",
-      "data": {
-        "role": "bounty_hunter",
-        "stake": 5000000000,
-        "addr": "GBDAFXQUFTDL7XCETFFSZFZHVHGSP6F3JS43E6ZBAEOS6JSTCMKOSVZS"
-      },
-      "timestamp": "2026-04-12T13:36:31.255Z"
-    },
-    {
-      "event": "task_new",
-      "data": {
-        "taskId": "FLY_ME_TO_GOA",
-        "reward": 0.1,
-        "contractor": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU",
-        "title": "Fly me to Goa",
-        "addr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU"
-      },
-      "timestamp": "2026-04-12T13:40:22.189Z"
-    },
-    {
-      "event": "task_apply",
-      "data": {
-        "taskId": "FLY_ME_TO_GOA",
-        "bounty_hunter": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH",
-        "addr": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH"
-      },
-      "timestamp": "2026-04-12T13:41:06.855Z"
-    },
-    {
-      "event": "task_allot",
-      "data": {
-        "taskId": "FLY_ME_TO_GOA",
-        "bounty_hunter": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH",
-        "addr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU"
-      },
-      "timestamp": "2026-04-12T13:41:52.168Z"
-    }
-  ],
+  "eventLog": [],
   "stats": {
     "totalUSDCFlow": 0.2,
     "totalAgents": 3,
