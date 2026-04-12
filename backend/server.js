@@ -1,3 +1,4 @@
+// Backend Hub Server - Reloading to apply store.json fixes
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
@@ -10,7 +11,7 @@ app.use(express.json());
 /**
  * --- CONFIGURATION ---
  */
-const CONTRACT_ID = "CBIBCZNBDMHAITGJCTSUTDX4COEPDJA53WAWCOFEXTKBE7YWHNV7ZAUC";
+const CONTRACT_ID = "CCPMOUQ3VKPLB4KVOOCE72BEVJVAOO7M62OILN3I4AV3PBGASJVU65HB";
 const USDC_SAC    = "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA";
 
 const ROLES  = { CONTRACTOR: 'contractor', HUNTER: 'bounty_hunter' };
@@ -195,10 +196,15 @@ app.post('/api/hub/sync', (req, res) => {
                     registered: true
                 };
                 store.stats.totalAgents++;
-            } else if (!store.identities[data.addr].roles.includes(data.role)) {
-                store.identities[data.addr].roles.push(data.role);
-                store.identities[data.addr].stake += data.stake;
-                store.identities[data.addr].stake_xlm += data.stake / 10_000_000;
+            } else {
+                const agent = store.identities[data.addr];
+                if (!agent.roles.includes(data.role)) {
+                    agent.roles.push(data.role);
+                }
+                // Always sync/update the latest stake value sent by the MCP
+                agent.stake = data.stake;
+                agent.stake_xlm = data.stake / 10_000_000;
+                agent.registered = true;
             }
             break;
 

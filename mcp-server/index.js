@@ -7,7 +7,7 @@ import { Keypair } from "@stellar/stellar-sdk";
 /**
  * --- IRON CLAD CONFIGURATION ---
  */
-const CONTRACT_ID = "CBIBCZNBDMHAITGJCTSUTDX4COEPDJA53WAWCOFEXTKBE7YWHNV7ZAUC";
+const CONTRACT_ID = "CCPMOUQ3VKPLB4KVOOCE72BEVJVAOO7M62OILN3I4AV3PBGASJVU65HB";
 const USDC_SAC    = "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA";
 const SECRET_KEY  = process.env.STELLAR_SECRET_KEY;
 const ROLE        = process.env.AGENT_ROLE; // 'contractor' or 'bounty_hunter'
@@ -167,7 +167,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         "register", "--agent_id", agentId, "--addr", MY_ADDR, "--role", ROLE, "--stake", stroops]);
       if (!res.ok) throw new Error(`register failed: ${res.stderr}`);
 
-      await syncHub("reg", { role: ROLE, stake: args.stake });
+      await syncHub("reg", { role: ROLE, stake: parseInt(stroops) });
       return { content: [{ type: "text", text: `Success: Registered as ${ROLE} with ${args.stake} XLM staked. Identity Synced.` }] };
     }
 
@@ -207,7 +207,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         "slash_stake", "--agent_id", agentId, "--amount", stroops, "--reason", reason]);
       if (!res.ok) throw new Error(`slash_stake failed: ${res.stderr}`);
 
-      await syncHub("stake_slashed", { agentId, amount: args.amount, reason: args.reason });
+      await syncHub("stake_slashed", { agentId, amount: parseInt(stroops), reason: args.reason });
       return { content: [{ type: "text", text: `Slashed ${args.amount} XLM from ${agentId}. Reason: ${args.reason}` }] };
     }
 
@@ -221,7 +221,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         "top_up_stake", "--agent_id", agentId, "--amount", stroops]);
       if (!res.ok) throw new Error(`top_up_stake failed: ${res.stderr}`);
 
-      await syncHub("stake_topped_up", { agentId, amount: args.amount });
+      await syncHub("stake_topped_up", { agentId, amount: parseInt(stroops) });
       return { content: [{ type: "text", text: `Added ${args.amount} XLM to ${agentId}'s stake.` }] };
     }
 

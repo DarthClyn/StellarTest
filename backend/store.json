@@ -1,34 +1,34 @@
 {
   "tasks": {
     "POEM_AI_001": {
-      "taskId": "POEM_AI_001",
-      "title": "Write a poem about AI",
+      "taskId": "WRITE_AI_ESSAY_2026_04_12",
+      "title": "Write an essay on AI",
+      "contractorAddr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU",
+      "reward": 0.05,
+      "status": "open",
+      "bountyHunterAddr": "",
+      "applicants": [],
+      "workNote": "",
+      "onChainHash": ""
+    },
+    "AUDIT_CODE_2026_04_12": {
+      "taskId": "AUDIT_CODE_2026_04_12",
+      "title": "Audit code",
       "contractorAddr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU",
       "reward": 0.1,
       "status": "open",
       "bountyHunterAddr": null,
-      "applicants": [],
-      "workNote": null,
-      "onChainHash": null
-    },
-    "SPELL_CHECK_001": {
-      "taskId": "SPELL_CHECK_001",
-      "title": "Spell check-speeling",
-      "contractorAddr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU",
-      "reward": 0.02,
-      "status": "allotted",
-      "bountyHunterAddr": "GBDAFXQUFTDL7XCETFFSZFZHVHGSP6F3JS43E6ZBAEOS6JSTCMKOSVZS",
       "applicants": [
-        "GBDAFXQUFTDL7XCETFFSZFZHVHGSP6F3JS43E6ZBAEOS6JSTCMKOSVZS"
+        "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH"
       ],
       "workNote": null,
       "onChainHash": null
     },
-    "CAT_IMAGE_001": {
-      "taskId": "CAT_IMAGE_001",
-      "title": "Create a cat image",
+    "HYPERIMAGE2026": {
+      "taskId": "HYPERIMAGE2026",
+      "title": "Generate hyper realistic image",
       "contractorAddr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU",
-      "reward": 0.1,
+      "reward": 0.05,
       "status": "open",
       "bountyHunterAddr": null,
       "applicants": [],
@@ -39,22 +39,95 @@
   "identities": {
     "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU": {
       "addr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU",
-      "roles": ["contractor"],
+      "roles": [
+        "contractor"
+      ],
       "stake": 2000000000,
       "stake_xlm": 200,
       "registered": true
     },
-    "GBDAFXQUFTDL7XCETFFSZFZHVHGSP6F3JS43E6ZBAEOS6JSTCMKOSVZS": {
-      "addr": "GBDAFXQUFTDL7XCETFFSZFZHVHGSP6F3JS43E6ZBAEOS6JSTCMKOSVZS",
-      "roles": ["bounty_hunter"],
+    "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH": {
+      "addr": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH",
+      "roles": [
+        "bounty_hunter"
+      ],
       "stake": 5000000000,
       "stake_xlm": 500,
       "registered": true
     }
   },
-  "eventLog": [],
+  "eventLog": [
+    {
+      "event": "reg",
+      "data": {
+        "role": "contractor",
+        "stake": 2000000000,
+        "addr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU"
+      },
+      "timestamp": "2026-04-12T12:17:08.627Z"
+    },
+    {
+      "event": "task_new",
+      "data": {
+        "taskId": "TEST2",
+        "reward": 1,
+        "contractor": "ABC",
+        "title": "T"
+      },
+      "timestamp": "2026-04-12T12:27:02.493Z"
+    },
+    {
+      "event": "task_new",
+      "data": {
+        "taskId": "AUDIT_CODE_2026_04_12",
+        "reward": 0.1,
+        "contractor": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU",
+        "title": "Audit code",
+        "addr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU"
+      },
+      "timestamp": "2026-04-12T12:33:19.719Z"
+    },
+    {
+      "event": "task_apply",
+      "data": {
+        "taskId": "WRITE_AI_ESSAY_2026_04_12",
+        "bounty_hunter": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH",
+        "addr": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH"
+      },
+      "timestamp": "2026-04-12T12:37:10.155Z"
+    },
+    {
+      "event": "task_new",
+      "data": {
+        "taskId": "HYPERIMAGE2026",
+        "reward": 0.05,
+        "contractor": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU",
+        "title": "Generate hyper realistic image",
+        "addr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU"
+      },
+      "timestamp": "2026-04-12T12:37:50.482Z"
+    },
+    {
+      "event": "reg",
+      "data": {
+        "role": "bounty_hunter",
+        "stake": 5000000000,
+        "addr": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH"
+      },
+      "timestamp": "2026-04-12T12:39:36.579Z"
+    },
+    {
+      "event": "task_apply",
+      "data": {
+        "taskId": "AUDIT_CODE_2026_04_12",
+        "bounty_hunter": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH",
+        "addr": "GBWYRMQEZT7AXDMJM7RIABSXSJSPDIIW7QOWI2KMECPAHP5XBVSMMCMH"
+      },
+      "timestamp": "2026-04-12T12:43:11.398Z"
+    }
+  ],
   "stats": {
-    "totalUSDCFlow": 0.0,
+    "totalUSDCFlow": 0,
     "totalAgents": 2,
     "activeBounties": 3
   }

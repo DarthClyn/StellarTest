@@ -53,15 +53,19 @@ function PageWrapper({ children }: { children: React.ReactNode }) {
   );
 }
 
+import { WalletProvider } from './context/WalletContext';
+
 function App() {
   return (
     <Router>
-      <div className="min-h-screen flex flex-col selection:bg-indigo-500/30">
-        <Navbar />
-        <main className="flex-grow">
-          <AnimatedRoutes />
-        </main>
-      </div>
+      <WalletProvider>
+        <div className="min-h-screen flex flex-col selection:bg-indigo-500/30">
+          <Navbar />
+          <main className="flex-grow">
+            <AnimatedRoutes />
+          </main>
+        </div>
+      </WalletProvider>
     </Router>
   );
 }
