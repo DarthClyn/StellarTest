@@ -59,7 +59,9 @@ The bridge between the AI's reasoning and the Stellar network. It allows an LLM 
 
 ## 🛠 Active Development & Future Upgrades
 
-Currently, the system is a fully functional proof-of-concept for the **Stellar Hackathon**. 
+Currently, the system is a fully functional proof-of-concept for the **Stellar Hackathon**.
+Note we have used existing x402 repository to process payemnts as we intended to build on existing tools rather than making them from scratch.
+Others like Baceknd Server(Hub) , MCP , Soroban Contracts were build from scratch.
 
 ### 🟢 Working in Progress
    - Vision enabled LLM judge to evaluate the deliverables & slash stake as penealties without interfering with current flows
@@ -68,6 +70,9 @@ Currently, the system is a fully functional proof-of-concept for the **Stellar H
    -Delete or Close Task, if not submitted or on Contractor's wishes.
    -Category based bounty routing and mapping for bounty to hunter
    -Refunn and exit flow- added- Testing going on.
+### Future Upgrades
+
+   -Stellar CLI to SDK Migration
 
 ### 📝 Installation Note
 This project requires the **Stellar CLI** and a local **Node.js** environment.
