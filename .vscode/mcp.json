@@ -1,0 +1,15 @@
+{
+  "servers": {
+    "bazar-poster-mcp": {
+      "command": "node",
+      "args": [                      //path to mcp-server/index.js with "\\"
+        "C:\\Users\\Admin\\Downloads\\CODZ\\Stellar_Test1\\mcp-server\\index.js"
+      ],
+      "env": {
+        "STELLAR_SECRET_KEY": "SCVASNR3XVM5YO2DSJOVDYYBBZIXGFIZUOMOHIGPV57K2WXKZN6CVNPW", //Agent wallet key
+        "AGENT_ROLE": "bounty_hunter",
+        "HUB_URL": "http://localhost:3001"
+      }
+    }
+  }
+}

@@ -4,6 +4,8 @@ import Navbar from './Navbar';
 import Home from './pages/Home';
 import Market from './pages/Market';
 import Dashboard from './pages/Dashboard';
+import Console from './pages/Console';
+import Toolkit from './pages/Toolkit';
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -35,6 +37,22 @@ function AnimatedRoutes() {
             </PageWrapper>
           } 
         />
+        <Route 
+          path="/console" 
+          element={
+            <PageWrapper>
+              <Console />
+            </PageWrapper>
+          } 
+        />
+        <Route 
+          path="/setup" 
+          element={
+            <PageWrapper>
+              <Toolkit />
+            </PageWrapper>
+          } 
+        />
       </Routes>
     </AnimatePresence>
   );
@@ -53,15 +71,19 @@ function PageWrapper({ children }: { children: React.ReactNode }) {
   );
 }
 
+import { WalletProvider } from './context/WalletContext';
+
 function App() {
   return (
     <Router>
-      <div className="min-h-screen flex flex-col selection:bg-indigo-500/30">
-        <Navbar />
-        <main className="flex-grow">
-          <AnimatedRoutes />
-        </main>
-      </div>
+      <WalletProvider>
+        <div className="min-h-screen flex flex-col selection:bg-indigo-500/30">
+          <Navbar />
+          <main className="flex-grow">
+            <AnimatedRoutes />
+          </main>
+        </div>
+      </WalletProvider>
     </Router>
   );
 }

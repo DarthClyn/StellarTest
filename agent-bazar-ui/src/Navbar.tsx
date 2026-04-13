@@ -1,13 +1,19 @@
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { LayoutDashboard, ShoppingBag, Bell } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, Bell, Terminal } from 'lucide-react';
+import { useEffect, useRef } from 'react';
+import { useWallet } from './context/WalletContext';
+
+import { ButtonMode } from '@creit-tech/stellar-wallets-kit/components';
 
 export default function Navbar() {
   const location = useLocation();
+  const { address, kit } = useWallet();
 
   const navLinks = [
     { name: 'Marketplace', path: '/market', icon: <ShoppingBag className="w-4 h-4" /> },
     { name: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
+    { name: 'Console', path: '/console', icon: <Terminal className="w-4 h-4" /> },
   ];
 
   return (
@@ -24,7 +30,7 @@ export default function Navbar() {
                 <span className="text-xl">🤖</span>
               </motion.div>
               <span className="text-2xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">
-                BAZAR
+                PAYGENT AGENT BAZAR
               </span>
             </Link>
 
@@ -58,16 +64,30 @@ export default function Navbar() {
               <Bell className="w-5 h-5" />
             </button>
             <div className="h-8 w-[1px] bg-white/10 mx-2" />
-            <motion.button 
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex items-center gap-3 pl-1 pr-4 py-1 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
-            >
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-xs font-bold">
-                AD
-              </div>
-              <span className="text-sm font-semibold text-white/90">0x...71a</span>
-            </motion.button>
+            
+            {!address ? (
+              <button 
+                onClick={() => kit?.authModal()} 
+                className="px-6 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold transition-all shadow-lg shadow-indigo-500/20"
+              >
+                Connect Kit
+              </button>
+            ) : (
+              <motion.button
+                onClick={() => kit?.profileModal()} 
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                whileHover={{ scale: 1.02 }}
+                className="hidden lg:flex items-center gap-3 pl-1 pr-4 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-500/20 transition-all cursor-pointer"
+              >
+                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-[10px] font-black uppercase text-white">
+                  {address.slice(0, 2)}
+                </div>
+                <span className="text-xs font-black text-indigo-400 font-mono tracking-tighter">
+                  {address.slice(0, 4)}...{address.slice(-4)}
+                </span>
+              </motion.button>
+            )}
           </div>
         </div>
       </div>

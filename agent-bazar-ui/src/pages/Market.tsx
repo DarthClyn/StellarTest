@@ -1,11 +1,31 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { mockTasks, mockAgents } from "../mockData";
 import { Search, Filter, Rocket, TrendingUp, Users } from "lucide-react";
 
 export default function Market() {
   const [activeTab, setActiveTab] = useState<"bounties" | "agents">("bounties");
-  const openBounties = mockTasks.filter(t => t.status === "OPEN");
+  const [bounties, setBounties] = useState<any[]>([]);
+  const [agents, setAgents] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchData = () => {
+      fetch('http://localhost:3001/api/dashboard/tasks')
+        .then(res => res.json())
+        .then(data => setBounties(data || []))
+        .catch(console.error);
+
+      fetch('http://localhost:3001/api/dashboard/agents')
+        .then(res => res.json())
+        .then(data => setAgents(data || []))
+        .catch(console.error);
+    };
+
+    fetchData();
+    const interval = setInterval(fetchData, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const openBounties = bounties.filter(t => t.status === "open");
 
   return (
     <div className="min-h-screen pt-20 pb-32">
@@ -72,7 +92,7 @@ export default function Market() {
                   <div>
                     <div className="flex justify-between items-start mb-6">
                       <span className="bg-indigo-500/10 text-indigo-400 text-[10px] font-black tracking-widest px-3 py-1 rounded-full uppercase border border-indigo-500/20">
-                        {task.category}
+                        {task.category || 'AI TASK'}
                       </span>
                       <TrendingUp className="w-5 h-5 text-green-400 opacity-50" />
                     </div>
@@ -98,34 +118,38 @@ export default function Market() {
               exit={{ opacity: 0, y: -20 }}
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
             >
-              {mockAgents.map(agent => (
-                <div key={agent.agentId} className="glass-card p-8 rounded-3xl hover:-translate-y-1 transition-all border-white/5">
+              {agents.map(agent => (
+                <div key={agent.addr} className="glass-card p-8 rounded-3xl hover:-translate-y-1 transition-all border-white/5">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-2xl">
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-2xl shadow-lg shadow-indigo-500/10">
                       🤖
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold">{agent.name}</h3>
-                      <p className="text-white/30 text-xs font-mono">{agent.ownerAddress.slice(0, 6)}...{agent.ownerAddress.slice(-4)}</p>
+                      <h3 className="text-xl font-black text-white">{agent.name || "Unnamed Agent"}</h3>
+                      <p className="text-indigo-400 font-mono text-[10px] font-bold tracking-tighter uppercase">{agent.addr.slice(0, 8)}...{agent.addr.slice(-6)}</p>
                     </div>
                   </div>
                   
-                  <div className="flex flex-wrap gap-2 mb-8">
-                    {agent.capabilities.map(cap => (
-                      <span key={cap} className="bg-white/5 text-[10px] font-bold text-white/50 px-2.5 py-1 rounded-lg border border-white/5">
-                        {cap}
-                      </span>
-                    ))}
+                  <div className="flex flex-wrap gap-2 mb-8 min-h-[40px]">
+                      {agent.capabilities?.length > 0 ? agent.capabilities.map((cap: string) => (
+                        <span key={cap} className="bg-white/5 text-[9px] font-black uppercase text-white/40 px-3 py-1.5 rounded-xl border border-white/5 tracking-widest transition-all hover:bg-white/10 hover:text-white/60">
+                          {cap.replace('_', ' ')}
+                        </span>
+                      )) : (
+                        <span className="bg-white/5 text-[9px] font-black uppercase text-white/20 px-3 py-1.5 rounded-xl border border-white/5 tracking-widest">
+                          General Purpose
+                        </span>
+                      )}
                   </div>
 
                   <div className="flex justify-between items-center pt-6 border-t border-white/5">
                     <div className="flex flex-col">
-                      <span className="text-white/30 text-[10px] font-black uppercase tracking-wider mb-1">Total Earned</span>
-                      <span className="text-lg font-black text-green-400">{agent.metrics.totalEarned} USDC</span>
+                      <span className="text-white/30 text-[10px] font-black uppercase tracking-wider mb-1">Staked Amount</span>
+                      <span className="text-lg font-black text-green-400">{agent.stake_xlm} XLM</span>
                     </div>
                     <div className="flex flex-col items-end">
-                      <span className="text-white/30 text-[10px] font-black uppercase tracking-wider mb-1">Success Rate</span>
-                      <span className="text-lg font-black text-indigo-400">98%</span>
+                      <span className="text-white/30 text-[10px] font-black uppercase tracking-wider mb-1">Status</span>
+                      <span className="text-lg font-black text-indigo-400">Online</span>
                     </div>
                   </div>
                 </div>
