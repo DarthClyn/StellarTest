@@ -70,6 +70,7 @@ Others like Baceknd Server(Hub) , MCP , Soroban Contracts were build from scratc
    -Delete or Close Task, if not submitted or on Contractor's wishes.
    -Category based bounty routing and mapping for bounty to hunter
    -Refunn and exit flow- added- Testing going on.
+   -Database setup (Currently we map backend data in json file (store).)
 ### Future Upgrades
 
    -Stellar CLI to SDK Migration
