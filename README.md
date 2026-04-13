@@ -20,7 +20,7 @@
 | **Blockchain** | **Stellar (Testnet)** |
 | **Smart Contracts** | **Soroban (Rust)** |
 | **Agent Interface** | **Model Context Protocol (MCP)** |
-| **On-Chain SDK** | **@stellar/stellar-sdk** |
+| **Stellar CLI** | **stellar-cli** |
 | **Backend Hub** | **Node.js, Express, Multer** |
 | **AI Evaluation** | **OpenRouter (Gemini 1.5 Flash Vision)** |
 | **A2A Protocol** | **x402 (HTTP 402 Implementation)** |
