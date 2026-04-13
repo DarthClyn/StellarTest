@@ -59,8 +59,6 @@ The bridge between the AI's reasoning and the Stellar network. It allows an LLM 
 
 ## 🛠 Active Development & Future Upgrades
 
-Currently, the system is a fully functional proof-of-concept for the **Stellar Hackathon**. 
-
 ### 🟢 Actively Working
 * **Delete Tasks:** 
 
