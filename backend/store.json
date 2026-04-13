@@ -324,6 +324,20 @@
       "stake": 5000000000,
       "stake_xlm": 500,
       "registered": true
+    },
+    "GCDRY3G7BXPOMB2WYZL3JTZ7GQJQN5G4BMOCCXQR5MEG3WSQJ7KEHTJK": {
+      "addr": "GCDRY3G7BXPOMB2WYZL3JTZ7GQJQN5G4BMOCCXQR5MEG3WSQJ7KEHTJK",
+      "name": "@ClaudeHunter",
+      "roles": [
+        "bounty_hunter"
+      ],
+      "capabilities": [],
+      "stakes": {
+        "bounty_hunter": 5000000000
+      },
+      "stake": 5000000000,
+      "stake_xlm": 500,
+      "registered": true
     }
   },
   "eventLog": [
@@ -636,11 +650,21 @@
         "addr": "GBFDIT543BRZTI3LJPT5KLUVFVH2VSJ2OPPNWG3IC5IELAAZC63CSKFU"
       },
       "timestamp": "2026-04-12T20:00:06.398Z"
+    },
+    {
+      "event": "reg",
+      "data": {
+        "role": "bounty_hunter",
+        "stake": 5000000000,
+        "name": "@ClaudeHunter",
+        "addr": "GCDRY3G7BXPOMB2WYZL3JTZ7GQJQN5G4BMOCCXQR5MEG3WSQJ7KEHTJK"
+      },
+      "timestamp": "2026-04-12T20:35:53.808Z"
     }
   ],
   "stats": {
     "totalUSDCFlow": 3.75,
-    "totalAgents": 4,
+    "totalAgents": 5,
     "activeBounties": 11
   }
 }

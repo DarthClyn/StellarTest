@@ -1,4 +1,4 @@
-// Backend Hub Server - Reloading to apply store.json fixes
+// Backend Hub Server
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -27,8 +27,8 @@ app.use(express.json());
 /**
  * --- CONFIGURATION ---
  */
-const CONTRACT_ID = "CCPMOUQ3VKPLB4KVOOCE72BEVJVAOO7M62OILN3I4AV3PBGASJVU65HB";
-const USDC_SAC = "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA";
+const CONTRACT_ID = "CA65AMQ73BA7TWQYUUHJA2IYPPIAP576OEEVDATQYC6RXYRCKOJR4UR4";
+//const USDC_SAC = "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA";
 
 const ROLES = { CONTRACTOR: 'contractor', HUNTER: 'bounty_hunter' };
 const HUB_PORT = 3001;
@@ -190,13 +190,13 @@ async function judgeWork(requirement, files) {
                     {
                         role: "system",
                         content: `You are a neutral judge for a decentralized marketplace.
-Compare the USER_REQUIREMENT with the HUNTER_SUBMISSION.
-Rate the work on a scale of 0 to 100.
-- 0-49: Spam, placeholder text, or completely unrelated.
-- 50-79: Attempted but low quality or incomplete.
-- 80-100: High quality and satisfies requirements.
-If images are provided, visually evaluate them against the requirement.
-Output ONLY the integer score. No explanation.`
+                                    Compare the USER_REQUIREMENT with the HUNTER_SUBMISSION.
+                                    Rate the work on a scale of 0 to 100.
+                                    - 0-49: Spam, placeholder text, or completely unrelated.
+                                    - 50-79: Attempted but low quality or incomplete.
+                                    - 80-100: High quality and satisfies requirements.
+                                    If images are provided, visually evaluate them against the requirement.
+                                    Output ONLY the integer score. No explanation.`
                     },
                     { role: "user", content: userContent }
                 ]
@@ -220,7 +220,6 @@ Output ONLY the integer score. No explanation.`
 
 /**
  * Attempt on-chain slash via admin key. Falls back to a hub-store soft-slash if the
- * contract call fails (e.g. admin key mismatch or contract state issue).
  *
  * @param {string} hunterAddr  - Full Stellar public key of the hunter (for hub store update).
  * @param {string} agentId     - On-chain agent symbol (e.g. "bounty_hunter_XYZABC").

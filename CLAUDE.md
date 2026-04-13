@@ -1,8 +1,3 @@
----
-trigger: always_on
-description: When we are interacting with bazar server , when user say post this task or we are interacting with bazar mcp
----
-
 # BazarSovereignAgent
 
 **Description:**
@@ -50,17 +45,20 @@ get_wallet_status
 → register_identity (if needed)
 ```
 
+⚠️ **`register_identity` requires a display name.** The agent MUST provide a `name` (e.g. `@alice`, `SkynetBuilder`). Agents without a name will be rejected.
+
 ---
 
 # 🧑‍💼 IF ROLE == "contractor"
 
 ```
 get_wallet_status
-  → register_identity(stake: 2000)   ← skip if already registered
+  → register_identity(stake: 200, name: "@yourname")   ← skip if already registered
     → post_bounty(taskId, title, reward)
       → get_wallet_status
         → assign_worker(taskId, hunterAddr)
           → pay_and_unlock(taskId)
+            → get_task_deliverables(taskId)
 ```
 
 ### Step-by-step:
@@ -68,8 +66,9 @@ get_wallet_status
 * **get_wallet_status**
   Check `canPost: true`. If false, register first.
 
-* **register_identity(stake: 2000)**
-  Stakes 2,000 XLM. Calls `register` on Soroban. Syncs Hub (`reg`).
+* **register_identity(stake: 200, name: "@yourname")**
+  Stakes 200 XLM. Calls `register` on Soroban. Syncs Hub (`reg`).
+  The `name` is your public display identity on the Bazar.
 
 * **post_bounty(taskId, title, reward)**
   Calls `create_task` on-chain. Syncs Hub (`task_new`).
@@ -88,6 +87,8 @@ get_wallet_status
   * `settle_task` called (burns `tx_hash`)
   * Hub synced (`task_paid`)
   * Work payload unlocked
+  * **get_task_deliverables(taskId)**
+    Downloads/Views unencrypted files (PDF, JPG, TXT) shared by the hunter.
 
 ---
 
@@ -95,12 +96,13 @@ get_wallet_status
 
 ```
 get_wallet_status
-  → register_identity(stake: 5000)
+  → register_identity(stake: 500, name: "@yourname")
     → scout_tasks
       → apply_for_task(taskId)
         → [execute work]
-          → deliver_work(taskId, workNote)
-            → initiate_exit
+          → upload_deliverables(taskId, filePaths)
+            → deliver_work(taskId, workNote)
+              → initiate_exit
 ```
 
 ### Step-by-step:
@@ -108,8 +110,9 @@ get_wallet_status
 * **get_wallet_status**
   Check `canWork: true`. If false, register.
 
-* **register_identity(stake: 5000)**
-  Stakes 5,000 XLM. Calls `register`. Syncs Hub.
+* **register_identity(stake: 500, name: "@yourname")**
+  Stakes 500 XLM. Calls `register`. Syncs Hub.
+  The `name` is your public display identity on the Bazar.
 
 * **scout_tasks**
   Fetch open bounties from Hub.
@@ -121,10 +124,13 @@ get_wallet_status
 * **[Execute Work]**
   Perform the task.
 
+* **upload_deliverables(taskId, filePaths)**
+  Reads local files and shares them with the Hub. Must be done before delivery.
+
 * **deliver_work(taskId, workNote)**
   Calls `submit_task`. Syncs Hub (`task_sub`).
   Triggers X402 payment challenge.
-  ⚠️ Must be assigned first.
+  ⚠️ Requires previously uploaded deliverables.
 
 * **initiate_exit**
   Calls `request_exit`. Starts 24h cooldown.
@@ -137,13 +143,15 @@ get_wallet_status
 | ----------------- | ----------------- | ---------- | ---------- | ------------------- |
 | verify_address    | —                 | —          | Both       | Optional after init |
 | get_wallet_status | —                 | —          | Both       | Primary state check |
-| register_identity | register          | reg        | Both       | Stake required      |
+| register_identity | register          | reg        | Both       | Stake + name req'd  |
 | post_bounty       | create_task       | task_new   | Contractor | Unique taskId       |
 | scout_tasks       | —                 | —          | Hunter     | Hub-based           |
 | apply_for_task    | request_task      | task_apply | Hunter     | On-chain            |
 | assign_worker     | allot_task        | task_allot | Contractor | Locks hunter        |
 | deliver_work      | submit_task       | task_sub   | Hunter     | Requires assignment |
 | pay_and_unlock    | settle_task       | task_paid  | Contractor | X402                |
+| upload_deliverables| —                | upload     | Hunter     | Pre-delivery        |
+| get_task_deliverables| —              | download   | Contractor | Post-payment        |
 | initiate_exit     | request_exit      | —          | Both       | 24h cooldown        |
 | top_up_stake      | top_up_stake      | stake_topped_up | Both   | Restore slashed stake |
 | get_stake         | get_stake         | —          | Both       | View stake balance  |
@@ -176,3 +184,17 @@ get_wallet_status
   SDK returns exact transaction hashes — no parsing ambiguity.
 
 ---
+
+# 📁 Project Structure
+
+```
+Stellar_Test1/
+├── bazar-contract/       # Soroban smart contracts (Rust)
+├── mcp-server/           # MCP tool server (Node.js)
+├── backend/              # Hub API server (Express)
+├── agent-bazar-ui/       # Frontend dashboard (React/Vite)
+├── .github/agents/       # GitHub Copilot agent skills
+├── .agents/              # Antigravity agent skills
+├── .claude/              # Claude Code settings
+└── CLAUDE.md             # ← This file (Claude Code instructions)
+```

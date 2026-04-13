@@ -125,7 +125,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     // ── Identity ──────────────────────────────────────────────────────────────
     { name: "verify_address",    description: "Derive and verify your Stellar address from secret key.",                                  inputSchema: { type: "object", properties: {} } },
     { name: "get_wallet_status", description: "Get address and Hub registration status.",                                                  inputSchema: { type: "object", properties: {} } },
-    { name: "register_identity", description: "Stake real XLM to join. Contractor: exactly 200 XLM. Hunter: exactly 500 XLM.",            inputSchema: { type: "object", properties: { stake: { type: "number", description: "Exact XLM to stake: 200 for contractor, 500 for bounty_hunter" } }, required: ["stake"] } },
+    { name: "register_identity", description: "Stake real XLM to join. Contractor: exactly 200 XLM. Hunter: exactly 500 XLM. You MUST provide a display name.", inputSchema: { type: "object", properties: { stake: { type: "number", description: "Exact XLM to stake: 200 for contractor, 500 for bounty_hunter" }, name: { type: "string", description: "Display name / username for this agent (e.g. @alice, SkynetBuilder)" } }, required: ["stake", "name"] } },
     { name: "initiate_exit",     description: "Agent: Start 24h cooldown to withdraw remaining stake.",                                    inputSchema: { type: "object", properties: {} } },
     { name: "admin_refund",      description: "Admin: Refund remaining stake to agent after 24h cooldown.",                               inputSchema: { type: "object", properties: { agentId: { type: "string" } }, required: ["agentId"] } },
     { name: "init_contract",     description: "Admin: Initialize contract with admin address. Run once after deploy.",                     inputSchema: { type: "object", properties: { adminAddr: { type: "string" } }, required: ["adminAddr"] } },
@@ -181,17 +181,22 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       if (args.stake !== required) {
         throw new Error(`Stake must be exactly ${required} XLM for ${ROLE}. Got: ${args.stake}`);
       }
+      if (!args.name || args.name.trim().length === 0) {
+        throw new Error("A display name is required for registration. Provide a name like '@alice' or 'SkynetBuilder'.");
+      }
 
+      const displayName = args.name.trim();
       const stroops = toStroops(args.stake);
       const agentId = toSymbol(`${ROLE}_${MY_ADDR.slice(-6)}`);
-      console.error(`[STAKE]: Registering ${ROLE} with ${args.stake} XLM (agentId: ${agentId})...`);
+      console.error(`[STAKE]: Registering ${ROLE} as '${displayName}' with ${args.stake} XLM (agentId: ${agentId})...`);
 
       const res = runStellar(["contract", "invoke", "--id", CONTRACT_ID, ...auth, "--",
         "register", "--agent_id", agentId, "--addr", MY_ADDR, "--role", ROLE, "--stake", stroops]);
       if (!res.ok) throw new Error(`register failed: ${res.stderr}`);
 
-      await syncHub("reg", { role: ROLE, stake: parseInt(stroops) });
-      return { content: [{ type: "text", text: `Success: Registered as ${ROLE} with ${args.stake} XLM staked. Identity Synced.` }] };
+      // ── Critical sync: retry until hub confirms registration ────────────────
+      await syncHubCritical("reg", { role: ROLE, stake: parseInt(stroops), name: displayName });
+      return { content: [{ type: "text", text: `Success: Registered as '${displayName}' (${ROLE}) with ${args.stake} XLM staked. Hub sync confirmed.` }] };
     }
 
     // ── initiate_exit ─────────────────────────────────────────────────────────
