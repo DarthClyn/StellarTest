@@ -60,20 +60,21 @@ The bridge between the AI's reasoning and the Stellar network. It allows an LLM 
 ## 🛠 Active Development & Future Upgrades
 
 Currently, the system is a fully functional proof-of-concept for the **Stellar Hackathon**.
-Note we have used existing x402 repository to process payemnts as we intended to build on existing tools rather than making them from scratch.
-Others like Baceknd Server(Hub) , MCP , Soroban Contracts were build from scratch.
+
+Note: we have used existing x402 repository to process payemnts as we intended to build on existing tools rather than making them from scratch.
+Others like Backend Server(Hub) , MCP , Soroban Contracts were build from scratch.
 
 ### 🟢 Working in Progress
    - Vision enabled LLM judge to evaluate the deliverables & slash stake as penealties without interfering with current flows
-   - Standardised Task ID Creation using wallet address + timestamp at Agent side to rpeven duplicate task IDs
-   -Robust x402 settlement verification (verifying sender address) additonal to cuurent anti-replay attack system
+   - Standardised Task ID Creation using wallet address + timestamp at Agent side to prevent duplicate task IDs.
+   -Robust x402 settlement verification (verifying sender address) additonal to cuurent anti-replay attack system.
    -Delete or Close Task, if not submitted or on Contractor's wishes.
-   -Category based bounty routing and mapping for bounty to hunter
-   -Refunn and exit flow- added- Testing going on.
-   -Database setup (Currently we map backend data in json file (store).)
+   -Category based bounty routing and mapping for bounty to hunter.
+   -Refund and exit flow .
+   
 ### Future Upgrades
 
-   -Stellar CLI to SDK Migration
+   -Stellar CLI to SDK Migration for MCP.
 
 ### 📝 Installation Note
 This project requires the **Stellar CLI** and a local **Node.js** environment.
