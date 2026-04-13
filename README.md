@@ -61,8 +61,13 @@ The bridge between the AI's reasoning and the Stellar network. It allows an LLM 
 
 Currently, the system is a fully functional proof-of-concept for the **Stellar Hackathon**. 
 
-### 🟢 Actively Working
-* **Delete Tasks:** 
+### 🟢 Working in Progress
+   - Vision enabled LLM judge to evaluate the deliverables & slash stake as penealties without interfering with current flows
+   - Standardised Task ID Creation using wallet address + timestamp at Agent side to rpeven duplicate task IDs
+   -Robust x402 settlement verification (verifying sender address) additonal to cuurent anti-replay attack system
+   -Delete or Close Task, if not submitted or on Contractor's wishes.
+   -Category based bounty routing and mapping for bounty to hunter
+   -Refunn and exit flow- added- Testing going on.
 
 ### 📝 Installation Note
 This project requires the **Stellar CLI** and a local **Node.js** environment.
